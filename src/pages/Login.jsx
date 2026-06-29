@@ -240,10 +240,10 @@ export default function Login() {
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#060412]">
+    <div className="relative min-h-screen flex items-start sm:items-center justify-center bg-[#060412] overflow-x-hidden overflow-y-auto px-4 py-8 sm:py-10">
 
       {/* ── Animated background ───────────────────────────────── */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+      <div className="fixed inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <div className="bg-orb orb-purple" />
         <div className="bg-orb orb-blue" />
         <div className="bg-orb orb-pink" />
@@ -266,23 +266,23 @@ export default function Login() {
       )}
 
       {/* ── Flip card ─────────────────────────────────────────── */}
-      <div className="w-full max-w-[440px] mx-4" style={{ perspective: '1400px' }}>
+      <div className="relative w-full max-w-[440px] sm:my-auto" style={{ perspective: '1400px' }}>
         <div className="flip-inner" style={{ transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}>
 
           {/* ── FRONT: Sign In ─────────────────────────────────── */}
           <div className="flip-face glass-card">
-            <div className="p-8 flex flex-col">
+            <div className="p-5 sm:p-8 flex flex-col">
 
-              <div className="flex flex-col items-center mb-7">
-                <img src={logo} alt="Planazo" className="w-[52px] h-[52px] mb-4 drop-shadow-[0_0_18px_rgba(139,92,246,0.55)]" />
-                <h1 className="text-[22px] font-bold text-white tracking-tight">Welcome back</h1>
-                <p className="text-white/40 text-[13px] mt-1">Sign in to continue</p>
+              <div className="flex flex-col items-center mb-4 sm:mb-7">
+                <img src={logo} alt="Planazo" className="w-10 h-10 sm:w-[52px] sm:h-[52px] mb-3 drop-shadow-[0_0_18px_rgba(139,92,246,0.55)]" />
+                <h1 className="text-xl sm:text-[22px] font-bold text-white tracking-tight">Welcome back</h1>
+                <p className="text-white/40 text-[13px] mt-0.5">Sign in to continue</p>
               </div>
 
-              {error && !flipped && <div className="alert-banner alert-error mb-5">{error}</div>}
-              {success && !flipped && <div className="alert-banner alert-success mb-5">{success}</div>}
+              {error && !flipped && <div className="alert-banner alert-error mb-4">{error}</div>}
+              {success && !flipped && <div className="alert-banner alert-success mb-4">{success}</div>}
 
-              <form onSubmit={handleLogin} className="flex flex-col gap-4">
+              <form onSubmit={handleLogin} className="flex flex-col gap-3 sm:gap-4">
 
                 {/* Account type — required */}
                 <div className="field-group">
@@ -326,7 +326,7 @@ export default function Login() {
                 <button type="submit" className="btn-primary mt-1">Sign In</button>
               </form>
 
-              <div className="flex items-center my-5 gap-3">
+              <div className="flex items-center my-4 gap-3">
                 <div className="flex-1 h-px bg-white/8" />
                 <span className="text-white/25 text-[11px] tracking-wider shrink-0">or continue with</span>
                 <div className="flex-1 h-px bg-white/8" />
@@ -337,7 +337,7 @@ export default function Login() {
                 <span>Sign in with Google</span>
               </button>
 
-              <p className="text-center text-white/35 text-[13px] mt-6">
+              <p className="text-center text-white/35 text-[13px] mt-4 sm:mt-6">
                 Don&apos;t have an account?{' '}
                 <button type="button" onClick={() => flip(true)}
                   className="text-purple-400 hover:text-purple-300 font-semibold transition-colors duration-200">
@@ -349,17 +349,17 @@ export default function Login() {
 
           {/* ── BACK: Sign Up ──────────────────────────────────── */}
           <div className="flip-face glass-card flip-back">
-            <div className="p-8 flex flex-col">
+            <div className="p-5 sm:p-8 flex flex-col">
 
-              <div className="flex flex-col items-center mb-7">
-                <img src={logo} alt="Planazo" className="w-[52px] h-[52px] mb-4 drop-shadow-[0_0_18px_rgba(139,92,246,0.55)]" />
-                <h1 className="text-[22px] font-bold text-white tracking-tight">Create account</h1>
-                <p className="text-white/40 text-[13px] mt-1">Join Planazo today</p>
+              <div className="flex flex-col items-center mb-4 sm:mb-7">
+                <img src={logo} alt="Planazo" className="w-10 h-10 sm:w-[52px] sm:h-[52px] mb-3 drop-shadow-[0_0_18px_rgba(139,92,246,0.55)]" />
+                <h1 className="text-xl sm:text-[22px] font-bold text-white tracking-tight">Create account</h1>
+                <p className="text-white/40 text-[13px] mt-0.5">Join Planazo today</p>
               </div>
 
-              {error && flipped && <div className="alert-banner alert-error mb-5">{error}</div>}
+              {error && flipped && <div className="alert-banner alert-error mb-4">{error}</div>}
 
-              <form onSubmit={handleSignup} className="flex flex-col gap-4">
+              <form onSubmit={handleSignup} className="flex flex-col gap-3 sm:gap-4">
 
                 {/* Account type — required */}
                 <div className="field-group">
@@ -410,7 +410,7 @@ export default function Login() {
                 <button type="submit" className="btn-primary mt-1">Create Account</button>
               </form>
 
-              <p className="text-center text-white/35 text-[13px] mt-6">
+              <p className="text-center text-white/35 text-[13px] mt-4 sm:mt-6">
                 Already have an account?{' '}
                 <button type="button" onClick={() => flip(false)}
                   className="text-purple-400 hover:text-purple-300 font-semibold transition-colors duration-200">
