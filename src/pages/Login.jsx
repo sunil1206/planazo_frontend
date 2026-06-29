@@ -7,7 +7,10 @@ const delay = ms => new Promise(r => setTimeout(r, ms))
 
 async function apiLogin({ email, password }) {
   await delay(1800)
-  if (email && password.length >= 6) return { token: 'mock_jwt_abc123' }
+  if (email === 'sunilma94@gmail.com' && password === 'admin') {
+    localStorage.setItem('planazo_user', JSON.stringify({ name: 'Sunil Ma', email }))
+    return { token: 'mock_jwt_abc123' }
+  }
   throw new Error('Invalid email or password')
 }
 
