@@ -38,6 +38,15 @@ const Icons = {
   ring:     <Ico><path d="M6 9a6 6 0 1 0 12 0A6 6 0 0 0 6 9"/><path d="M12 15v7"/><path d="M9 18l3 4 3-4"/></Ico>,
 }
 
+// ── User type display ─────────────────────────────────────────────────────────
+const USER_TYPE_LABELS = { user: 'User', vendor: 'Vendor', gift_seller: 'Gift Seller' }
+
+const USER_TYPE_STYLES = {
+  user:        { background: 'rgba(139,92,246,0.14)', color: '#c4b5fd', borderColor: 'rgba(139,92,246,0.25)' },
+  vendor:      { background: 'rgba(251,146,60,0.12)', color: '#fdba74', borderColor: 'rgba(251,146,60,0.25)' },
+  gift_seller: { background: 'rgba(52,211,153,0.12)', color: '#6ee7b7', borderColor: 'rgba(52,211,153,0.25)' },
+}
+
 // ── Mock data ─────────────────────────────────────────────────────────────────
 const STATS = [
   {
@@ -258,6 +267,12 @@ export default function Home() {
         <div className="min-w-0">
           <p className="text-white text-[13px] font-semibold leading-tight truncate">{user.name}</p>
           <p className="text-white/35 text-[11px] truncate">{user.email}</p>
+          {user.userType && (
+            <span className="inline-block mt-1 px-2 py-px text-[10px] font-semibold rounded-full tracking-wide border"
+              style={USER_TYPE_STYLES[user.userType] ?? USER_TYPE_STYLES.user}>
+              {USER_TYPE_LABELS[user.userType] ?? user.userType}
+            </span>
+          )}
         </div>
       </div>
 
