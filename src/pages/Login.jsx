@@ -1,5 +1,4 @@
-import { useState } from 'react'
-// Replace with: import logo from '../assets/logo.png' once you place the PNG in src/assets/
+import { useState, useRef, useEffect } from 'react'
 import logo from '../assets/logo.png'
 
 // ── Mock API (replace with real endpoints once available) ─────────────────────
@@ -7,10 +6,7 @@ const delay = ms => new Promise(r => setTimeout(r, ms))
 
 async function apiLogin({ email, password }) {
   await delay(1800)
-  if (email === 'sunilma94@gmail.com' && password === 'admin') {
-    localStorage.setItem('planazo_user', JSON.stringify({ name: 'Sunil Ma', email }))
-    return { token: 'mock_jwt_abc123' }
-  }
+  if (email === 'sunilma94@gmail.com' && password === 'admin') return { token: 'mock_jwt_abc123' }
   throw new Error('Invalid email or password')
 }
 
@@ -26,6 +22,13 @@ async function apiGoogleAuth() {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
+const USER_TYPES = [
+  { value: 'user',        label: 'User',        desc: 'Planning an event' },
+  { value: 'vendor',      label: 'Vendor',      desc: 'Offering wedding services' },
+  { value: 'gift_seller', label: 'Gift Seller',  desc: 'Selling gifts & products' },
+]
+
+// ── Icons ─────────────────────────────────────────────────────────────────────
 function EyeOpen() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]">
@@ -57,6 +60,88 @@ function GoogleIcon() {
   )
 }
 
+function ChevronDown() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0">
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  )
+}
+
+function CheckMark() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 shrink-0">
+      <path d="M20 6L9 17l-5-5" />
+    </svg>
+  )
+}
+
+// ── Glassmorphism dropdown ────────────────────────────────────────────────────
+function UserTypeSelect({ value, onChange }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    const close = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [])
+
+  const selected = USER_TYPES.find(t => t.value === value)
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(p => !p)}
+        className={`glass-input w-full flex items-center justify-between gap-3 cursor-pointer select-none text-left
+          ${open ? 'border-purple-500/55 shadow-[0_0_0_3px_rgba(139,92,246,0.12)]' : ''}
+          ${selected ? 'text-white/90' : 'text-white/25'}`}
+      >
+        {selected ? (
+          <span className="flex items-center gap-2 min-w-0">
+            <span className="font-medium">{selected.label}</span>
+            <span className="text-white/25 text-[12px]">·</span>
+            <span className="text-white/38 text-[12px] truncate">{selected.desc}</span>
+          </span>
+        ) : (
+          <span>Select account type</span>
+        )}
+        <span className={`transition-transform duration-200 text-white/35 ${open ? 'rotate-180' : ''}`}>
+          <ChevronDown />
+        </span>
+      </button>
+
+      {open && (
+        <div className="glass-dropdown absolute left-0 right-0 top-[calc(100%+6px)] z-50">
+          {USER_TYPES.map((type, i) => (
+            <button
+              key={type.value}
+              type="button"
+              onClick={() => { onChange(type.value); setOpen(false) }}
+              className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors duration-150
+                ${i < USER_TYPES.length - 1 ? 'border-b border-white/[0.05]' : ''}
+                ${value === type.value
+                  ? 'bg-purple-500/[0.14] text-white'
+                  : 'text-white/60 hover:text-white hover:bg-white/[0.05]'
+                }`}
+            >
+              <div>
+                <p className="text-[13.5px] font-medium leading-tight">{type.label}</p>
+                <p className="text-[11px] mt-0.5 opacity-50">{type.desc}</p>
+              </div>
+              {value === type.value && (
+                <span className="text-purple-400 ml-3"><CheckMark /></span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Password input ────────────────────────────────────────────────────────────
 function PasswordInput({ value, onChange, placeholder, show, onToggle, id }) {
   return (
     <div className="relative">
@@ -82,34 +167,40 @@ function PasswordInput({ value, onChange, placeholder, show, onToggle, id }) {
   )
 }
 
+// ── Main component ────────────────────────────────────────────────────────────
 export default function Login() {
-  const [flipped, setFlipped]   = useState(false)
-  const [loading, setLoading]   = useState(false)
-  const [error, setError]       = useState('')
-  const [success, setSuccess]   = useState('')
+  const [flipped, setFlipped] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState('')
+  const [success, setSuccess] = useState('')
 
+  // Login form
   const [loginEmail, setLoginEmail]     = useState('')
   const [loginPwd, setLoginPwd]         = useState('')
   const [showLoginPwd, setShowLoginPwd] = useState(false)
+  const [loginUserType, setLoginUserType] = useState('')
 
-  const [signupEmail, setSignupEmail]         = useState('')
-  const [signupPwd, setSignupPwd]             = useState('')
-  const [signupConfirm, setSignupConfirm]     = useState('')
-  const [showSignupPwd, setShowSignupPwd]     = useState(false)
-  const [showConfirmPwd, setShowConfirmPwd]   = useState(false)
+  // Signup form
+  const [signupEmail, setSignupEmail]       = useState('')
+  const [signupPwd, setSignupPwd]           = useState('')
+  const [signupConfirm, setSignupConfirm]   = useState('')
+  const [showSignupPwd, setShowSignupPwd]   = useState(false)
+  const [showConfirmPwd, setShowConfirmPwd] = useState(false)
+  const [signupUserType, setSignupUserType] = useState('')
 
-  const flip = (toSignup) => {
-    setError('')
-    setSuccess('')
-    setFlipped(toSignup)
-  }
+  const flip = (toSignup) => { setError(''); setSuccess(''); setFlipped(toSignup) }
+
+  const saveUser = (email, userType, name = 'Sunil Ma') =>
+    localStorage.setItem('planazo_user', JSON.stringify({ name, email, userType }))
 
   const handleLogin = async (e) => {
     e.preventDefault()
     setError('')
+    if (!loginUserType) { setError('Please select your account type to continue'); return }
     setLoading(true)
     try {
       await apiLogin({ email: loginEmail, password: loginPwd })
+      saveUser(loginEmail, loginUserType)
       window.location.href = '/home'
     } catch (err) {
       setError(err.message)
@@ -120,10 +211,8 @@ export default function Login() {
   const handleSignup = async (e) => {
     e.preventDefault()
     setError('')
-    if (signupPwd !== signupConfirm) {
-      setError('Passwords do not match')
-      return
-    }
+    if (!signupUserType) { setError('Please select your account type to continue'); return }
+    if (signupPwd !== signupConfirm) { setError('Passwords do not match'); return }
     setLoading(true)
     try {
       await apiSignup({ email: signupEmail, password: signupPwd })
@@ -138,9 +227,11 @@ export default function Login() {
 
   const handleGoogle = async () => {
     setError('')
+    if (!loginUserType) { setError('Please select your account type to continue'); return }
     setLoading(true)
     try {
       await apiGoogleAuth()
+      saveUser('google@planazo.com', loginUserType, 'Google User')
       window.location.href = '/home'
     } catch (err) {
       setError(err.message)
@@ -166,11 +257,7 @@ export default function Login() {
           <div className="relative flex items-center justify-center">
             <div className="loading-ring-outer" />
             <div className="loading-ring-inner" />
-            <img
-              src={logo}
-              alt="Planazo"
-              className="w-[72px] h-[72px] relative z-10 logo-pulse"
-            />
+            <img src={logo} alt="Planazo" className="w-[72px] h-[72px] relative z-10 logo-pulse" />
           </div>
           <p className="mt-7 text-white/40 text-[11px] tracking-[0.25em] uppercase font-medium animate-pulse select-none">
             Loading
@@ -179,31 +266,32 @@ export default function Login() {
       )}
 
       {/* ── Flip card ─────────────────────────────────────────── */}
-      <div className="w-full max-w-[420px] mx-4" style={{ perspective: '1400px' }}>
-        <div
-          className="flip-inner"
-          style={{
-            transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
-          }}
-        >
+      <div className="w-full max-w-[440px] mx-4" style={{ perspective: '1400px' }}>
+        <div className="flip-inner" style={{ transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}>
+
           {/* ── FRONT: Sign In ─────────────────────────────────── */}
           <div className="flip-face glass-card">
             <div className="p-8 flex flex-col">
 
               <div className="flex flex-col items-center mb-7">
                 <img src={logo} alt="Planazo" className="w-[52px] h-[52px] mb-4 drop-shadow-[0_0_18px_rgba(139,92,246,0.55)]" />
-                <h1 className="text-[22px] font-bold text-white tracking-tight">PLANAZO</h1>
+                <h1 className="text-[22px] font-bold text-white tracking-tight">Welcome back</h1>
                 <p className="text-white/40 text-[13px] mt-1">Sign in to continue</p>
               </div>
 
-              {error && !flipped && (
-                <div className="alert-banner alert-error mb-5">{error}</div>
-              )}
-              {success && !flipped && (
-                <div className="alert-banner alert-success mb-5">{success}</div>
-              )}
+              {error && !flipped && <div className="alert-banner alert-error mb-5">{error}</div>}
+              {success && !flipped && <div className="alert-banner alert-success mb-5">{success}</div>}
 
               <form onSubmit={handleLogin} className="flex flex-col gap-4">
+
+                {/* Account type — required */}
+                <div className="field-group">
+                  <label className="field-label">
+                    Account Type <span className="text-rose-400 ml-0.5">*</span>
+                  </label>
+                  <UserTypeSelect value={loginUserType} onChange={setLoginUserType} />
+                </div>
+
                 <div className="field-group">
                   <label htmlFor="login-email" className="field-label">Email</label>
                   <input
@@ -235,9 +323,7 @@ export default function Login() {
                   />
                 </div>
 
-                <button type="submit" className="btn-primary mt-1">
-                  Sign In
-                </button>
+                <button type="submit" className="btn-primary mt-1">Sign In</button>
               </form>
 
               <div className="flex items-center my-5 gap-3">
@@ -253,11 +339,8 @@ export default function Login() {
 
               <p className="text-center text-white/35 text-[13px] mt-6">
                 Don&apos;t have an account?{' '}
-                <button
-                  type="button"
-                  onClick={() => flip(true)}
-                  className="text-purple-400 hover:text-purple-300 font-semibold transition-colors duration-200"
-                >
+                <button type="button" onClick={() => flip(true)}
+                  className="text-purple-400 hover:text-purple-300 font-semibold transition-colors duration-200">
                   Create one
                 </button>
               </p>
@@ -274,11 +357,18 @@ export default function Login() {
                 <p className="text-white/40 text-[13px] mt-1">Join Planazo today</p>
               </div>
 
-              {error && flipped && (
-                <div className="alert-banner alert-error mb-5">{error}</div>
-              )}
+              {error && flipped && <div className="alert-banner alert-error mb-5">{error}</div>}
 
               <form onSubmit={handleSignup} className="flex flex-col gap-4">
+
+                {/* Account type — required */}
+                <div className="field-group">
+                  <label className="field-label">
+                    Account Type <span className="text-rose-400 ml-0.5">*</span>
+                  </label>
+                  <UserTypeSelect value={signupUserType} onChange={setSignupUserType} />
+                </div>
+
                 <div className="field-group">
                   <label htmlFor="signup-email" className="field-label">Email</label>
                   <input
@@ -317,18 +407,13 @@ export default function Login() {
                   />
                 </div>
 
-                <button type="submit" className="btn-primary mt-1">
-                  Create Account
-                </button>
+                <button type="submit" className="btn-primary mt-1">Create Account</button>
               </form>
 
               <p className="text-center text-white/35 text-[13px] mt-6">
                 Already have an account?{' '}
-                <button
-                  type="button"
-                  onClick={() => flip(false)}
-                  className="text-purple-400 hover:text-purple-300 font-semibold transition-colors duration-200"
-                >
+                <button type="button" onClick={() => flip(false)}
+                  className="text-purple-400 hover:text-purple-300 font-semibold transition-colors duration-200">
                   Sign in
                 </button>
               </p>
