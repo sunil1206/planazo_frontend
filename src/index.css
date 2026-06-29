@@ -283,3 +283,23 @@
 @keyframes ring-spin {
   to { transform: rotate(360deg); }
 }
+
+/* ── Glass dropdown ─────────────────────────────────────────────────────────── */
+
+.glass-dropdown {
+  background: rgba(11, 7, 26, 0.97);
+  backdrop-filter: blur(28px) saturate(1.5);
+  -webkit-backdrop-filter: blur(28px) saturate(1.5);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 14px;
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.65),
+    0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+  overflow: hidden;
+  animation: dropdown-in 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes dropdown-in {
+  from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
