@@ -322,7 +322,7 @@ export default function Home() {
   )
 
   return (
-    <div className="min-h-screen bg-[#060412] flex relative overflow-hidden">
+    <div className="min-h-screen bg-[#060412] flex relative overflow-x-hidden">
 
       {/* Sign-out confirmation */}
       {showSignOut && (
@@ -349,10 +349,10 @@ export default function Home() {
       )}
 
       {/* Main content */}
-      <main className="flex-1 lg:ml-64 min-h-screen overflow-auto">
+      <main className="flex-1 lg:ml-64 min-h-screen overflow-y-auto overflow-x-hidden">
 
         {/* Mobile top bar */}
-        <div className="lg:hidden flex items-center gap-3 px-4 py-4 border-b border-white/[0.07] bg-white/[0.03] backdrop-blur sticky top-0 z-20">
+        <div className="lg:hidden flex items-center gap-3 px-4 py-3.5 border-b border-white/[0.07] bg-[#060412]/80 backdrop-blur-xl sticky top-0 z-20">
           <button onClick={() => setSidebarOpen(true)} className="text-white/60 hover:text-white transition-colors p-1">
             {Icons.menu}
           </button>
@@ -360,10 +360,10 @@ export default function Home() {
           <span className="text-white font-bold text-[15px]">Planazo</span>
         </div>
 
-        <div className="p-6 lg:p-8 space-y-6 max-w-[1100px]">
+        <div className="p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6 w-full max-w-[1100px]">
 
           {/* ── Hero banner ─────────────────────────────────────── */}
-          <div className="relative rounded-2xl overflow-hidden p-7 lg:p-8"
+          <div className="relative rounded-2xl overflow-hidden p-5 sm:p-7 lg:p-8"
             style={{
               background: 'linear-gradient(135deg, rgba(109,28,209,0.75) 0%, rgba(79,46,180,0.65) 40%, rgba(37,99,235,0.5) 100%)',
               border: '1px solid rgba(255,255,255,0.12)',
@@ -381,15 +381,15 @@ export default function Home() {
                   <span className="inline-block w-4 h-px bg-white/40" />
                   WELCOME BACK TO PLANAZO
                 </p>
-                <h1 className="text-3xl lg:text-4xl font-bold text-white mb-3 leading-tight">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2 sm:mb-3 leading-tight">
                   Your Wedding Space
                 </h1>
-                <p className="text-white/55 text-[14px] leading-relaxed max-w-md">
+                <p className="text-white/55 text-[13px] sm:text-[14px] leading-relaxed max-w-md">
                   Create magic for your special day. Manage your digital experiences and track guest engagement in real-time.
                 </p>
               </div>
-              <div className="shrink-0">
-                <button className="flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-[14px] transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+              <div className="shrink-0 w-full sm:w-auto">
+                <button className="flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-3 rounded-xl font-semibold text-[14px] transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
                   style={{
                     background: 'rgba(255,255,255,0.95)',
                     color: '#4f46e5',
@@ -403,7 +403,7 @@ export default function Home() {
           </div>
 
           {/* ── Stats ───────────────────────────────────────────── */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             {STATS.map(s => <StatCard key={s.label} {...s} />)}
           </div>
 
