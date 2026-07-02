@@ -28,6 +28,12 @@ const USER_TYPES = [
   { value: 'gift_seller', label: 'Gift Seller',  desc: 'Selling gifts & products' },
 ]
 
+const ROLE_CHIP = {
+  user:        { label: 'User Account',        emoji: '🌸', bg: 'rgba(236,72,153,0.10)',  border: 'rgba(236,72,153,0.22)', color: '#f9a8d4' },
+  vendor:      { label: 'Vendor Account',      emoji: '🏪', bg: 'rgba(168,85,247,0.10)',  border: 'rgba(168,85,247,0.22)', color: '#d8b4fe' },
+  gift_seller: { label: 'Gift Seller Account', emoji: '🎁', bg: 'rgba(20,184,166,0.10)',  border: 'rgba(20,184,166,0.22)', color: '#5eead4' },
+}
+
 // ── Icons ─────────────────────────────────────────────────────────────────────
 function EyeOpen() {
   return (
@@ -188,6 +194,18 @@ export default function Login() {
   const [showConfirmPwd, setShowConfirmPwd] = useState(false)
   const [signupUserType, setSignupUserType] = useState('')
 
+  // Pre-selected role from /select-role page
+  const [preSelectedRole, setPreSelectedRole] = useState('')
+
+  useEffect(() => {
+    const role = new URLSearchParams(window.location.search).get('role')
+    if (role && USER_TYPES.find(t => t.value === role)) {
+      setLoginUserType(role)
+      setSignupUserType(role)
+      setPreSelectedRole(role)
+    }
+  }, [])
+
   const flip = (toSignup) => { setError(''); setSuccess(''); setFlipped(toSignup) }
 
   const saveUser = (email, userType, name = 'Sunil Ma') =>
@@ -284,12 +302,27 @@ export default function Login() {
 
               <form onSubmit={handleLogin} className="flex flex-col gap-2.5 sm:gap-3">
 
-                {/* Account type — required */}
+                {/* Account type — chip when pre-selected, dropdown otherwise */}
                 <div className="field-group">
                   <label className="field-label">
                     Account Type <span className="text-rose-400 ml-0.5">*</span>
                   </label>
-                  <UserTypeSelect value={loginUserType} onChange={setLoginUserType} />
+                  {preSelectedRole && ROLE_CHIP[preSelectedRole] ? (
+                    <div className="flex items-center justify-between px-3 py-2.5 rounded-xl"
+                      style={{ background: ROLE_CHIP[preSelectedRole].bg, border: `1px solid ${ROLE_CHIP[preSelectedRole].border}` }}>
+                      <span className="flex items-center gap-2 text-[13px] font-semibold" style={{ color: ROLE_CHIP[preSelectedRole].color }}>
+                        <span>{ROLE_CHIP[preSelectedRole].emoji}</span>
+                        {ROLE_CHIP[preSelectedRole].label}
+                      </span>
+                      <a href="/select-role"
+                        className="text-[12px] font-semibold opacity-65 hover:opacity-100 transition-opacity"
+                        style={{ color: ROLE_CHIP[preSelectedRole].color }}>
+                        Change
+                      </a>
+                    </div>
+                  ) : (
+                    <UserTypeSelect value={loginUserType} onChange={setLoginUserType} />
+                  )}
                 </div>
 
                 <div className="field-group">
@@ -361,12 +394,27 @@ export default function Login() {
 
               <form onSubmit={handleSignup} className="flex flex-col gap-2.5 sm:gap-3">
 
-                {/* Account type — required */}
+                {/* Account type — chip when pre-selected, dropdown otherwise */}
                 <div className="field-group">
                   <label className="field-label">
                     Account Type <span className="text-rose-400 ml-0.5">*</span>
                   </label>
-                  <UserTypeSelect value={signupUserType} onChange={setSignupUserType} />
+                  {preSelectedRole && ROLE_CHIP[preSelectedRole] ? (
+                    <div className="flex items-center justify-between px-3 py-2.5 rounded-xl"
+                      style={{ background: ROLE_CHIP[preSelectedRole].bg, border: `1px solid ${ROLE_CHIP[preSelectedRole].border}` }}>
+                      <span className="flex items-center gap-2 text-[13px] font-semibold" style={{ color: ROLE_CHIP[preSelectedRole].color }}>
+                        <span>{ROLE_CHIP[preSelectedRole].emoji}</span>
+                        {ROLE_CHIP[preSelectedRole].label}
+                      </span>
+                      <a href="/select-role"
+                        className="text-[12px] font-semibold opacity-65 hover:opacity-100 transition-opacity"
+                        style={{ color: ROLE_CHIP[preSelectedRole].color }}>
+                        Change
+                      </a>
+                    </div>
+                  ) : (
+                    <UserTypeSelect value={signupUserType} onChange={setSignupUserType} />
+                  )}
                 </div>
 
                 <div className="field-group">
