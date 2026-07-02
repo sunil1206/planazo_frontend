@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useState, useRef } from 'react'
 import logo from '../assets/logo.png'
 
 // ── Role definitions ──────────────────────────────────────────────────────────
@@ -44,21 +44,35 @@ const ROLES = [
   },
 ]
 
+// ── Logo loading overlay ──────────────────────────────────────────────────────
+function LoadingOverlay() {
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/65 backdrop-blur-md">
+      <div className="relative flex items-center justify-center">
+        <div className="loading-ring-outer" />
+        <div className="loading-ring-inner" />
+        <img src={logo} alt="Planazo" className="w-[72px] h-[72px] relative z-10 logo-pulse" />
+      </div>
+      <p className="mt-7 text-white/40 text-[11px] tracking-[0.25em] uppercase font-medium animate-pulse select-none">
+        Loading
+      </p>
+    </div>
+  )
+}
+
 // ── 3D tilt card ──────────────────────────────────────────────────────────────
-function RoleCard({ role }) {
+function RoleCard({ role, onSelect }) {
   const ref = useRef(null)
 
   const onMove = (e) => {
-    const el = ref.current
+    const el   = ref.current
     const rect = el.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-    const cx = rect.width  / 2
-    const cy = rect.height / 2
-    const rotX = -((y - cy) / cy) * 10
-    const rotY =  ((x - cx) / cx) * 10
-    el.style.transform  = `perspective(900px) rotateX(${rotX}deg) rotateY(${rotY}deg) translateZ(12px) scale(1.015)`
-    el.style.boxShadow  = `0 24px 64px ${role.glow}, 0 0 0 1px ${role.border}`
+    const cx   = rect.width  / 2
+    const cy   = rect.height / 2
+    const rotX = -((e.clientY - rect.top  - cy) / cy) * 10
+    const rotY =  ((e.clientX - rect.left - cx) / cx) * 10
+    el.style.transform   = `perspective(900px) rotateX(${rotX}deg) rotateY(${rotY}deg) translateZ(12px) scale(1.015)`
+    el.style.boxShadow   = `0 24px 64px ${role.glow}, 0 0 0 1px ${role.border}`
     el.style.borderColor = role.border
   }
 
@@ -69,38 +83,36 @@ function RoleCard({ role }) {
     el.style.borderColor = ''
   }
 
-  const onSelect = () => { window.location.href = `/login?role=${role.value}` }
-
   return (
     <div
       ref={ref}
       onMouseMove={onMove}
       onMouseLeave={onLeave}
-      onClick={onSelect}
-      className="glass-card p-6 sm:p-8 flex flex-col items-center text-center gap-4 cursor-pointer select-none"
+      onClick={() => onSelect(role.value)}
+      className="glass-card p-5 sm:p-6 flex flex-col items-center text-center gap-3.5 cursor-pointer select-none"
       style={{ transition: 'transform 0.18s ease, box-shadow 0.2s ease, border-color 0.2s ease' }}
     >
       {/* Emoji icon */}
-      <div className="w-[72px] h-[72px] rounded-[22px] flex items-center justify-center text-[38px]"
+      <div className="w-[60px] h-[60px] rounded-[18px] flex items-center justify-center text-[32px]"
         style={{
-          background:  role.emojiGrad,
-          boxShadow:   `0 8px 28px ${role.glow}`,
-          transform:   'translateZ(20px)',
+          background: role.emojiGrad,
+          boxShadow:  `0 8px 28px ${role.glow}`,
+          transform:  'translateZ(20px)',
         }}>
         {role.emoji}
       </div>
 
       {/* Label + description */}
       <div style={{ transform: 'translateZ(10px)' }}>
-        <h3 className="text-white font-bold text-[19px] mb-1">{role.label}</h3>
-        <p className="text-white/40 text-[13px] leading-snug">{role.desc}</p>
+        <h3 className="text-white font-bold text-[18px] mb-1">{role.label}</h3>
+        <p className="text-white/40 text-[12.5px] leading-snug">{role.desc}</p>
       </div>
 
       {/* Feature tags */}
-      <div className="flex flex-wrap gap-2 justify-center" style={{ transform: 'translateZ(8px)' }}>
+      <div className="flex flex-wrap gap-1.5 justify-center" style={{ transform: 'translateZ(8px)' }}>
         {role.tags.map(t => (
           <span key={t}
-            className="px-2.5 py-0.5 rounded-full text-[11.5px] font-medium"
+            className="px-2.5 py-0.5 rounded-full text-[11px] font-medium"
             style={{ background: role.tagBg, color: role.tagColor, border: `1px solid ${role.tagColor}35` }}>
             {t}
           </span>
@@ -108,7 +120,7 @@ function RoleCard({ role }) {
       </div>
 
       {/* CTA */}
-      <p className="text-[13.5px] font-semibold mt-1" style={{ color: role.accent, transform: 'translateZ(8px)' }}>
+      <p className="text-[13px] font-semibold mt-0.5" style={{ color: role.accent, transform: 'translateZ(8px)' }}>
         Get started →
       </p>
     </div>
@@ -117,8 +129,17 @@ function RoleCard({ role }) {
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 export default function RoleSelect() {
+  const [loading, setLoading] = useState(false)
+
+  const handleSelect = (value) => {
+    setLoading(true)
+    setTimeout(() => { window.location.href = `/login?role=${value}` }, 700)
+  }
+
   return (
-    <div className="relative min-h-screen bg-[#060412] flex flex-col items-center justify-center px-5 py-14">
+    <div className="relative h-screen overflow-hidden bg-[#060412] flex flex-col items-center justify-center px-5">
+
+      {loading && <LoadingOverlay />}
 
       {/* Background */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
@@ -130,28 +151,28 @@ export default function RoleSelect() {
       </div>
 
       {/* Logo link */}
-      <a href="/" className="relative flex items-center gap-2.5 mb-10 hover:opacity-80 transition-opacity">
+      <a href="/" className="relative flex items-center gap-2.5 mb-5 hover:opacity-80 transition-opacity">
         <img src={logo} alt="Planazo" className="w-8 h-8 drop-shadow-[0_0_10px_rgba(139,92,246,0.65)]" />
         <span className="text-white font-bold text-[17px] tracking-tight">Planazo</span>
       </a>
 
       {/* Heading */}
-      <div className="relative text-center mb-10">
-        <p className="text-[11px] font-bold tracking-[0.2em] uppercase text-purple-400/65 mb-3">
+      <div className="relative text-center mb-6">
+        <p className="text-[11px] font-bold tracking-[0.2em] uppercase text-purple-400/65 mb-2">
           India's Wedding Platform
         </p>
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-white mb-2 leading-tight">Who are you?</h1>
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-white mb-1.5 leading-tight">Who are you?</h1>
         <p className="text-white/38 text-[14px]">Choose your role to get the right experience</p>
       </div>
 
       {/* Role cards */}
       <div className="relative grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-[860px]"
         style={{ perspective: '1200px' }}>
-        {ROLES.map(r => <RoleCard key={r.value} role={r} />)}
+        {ROLES.map(r => <RoleCard key={r.value} role={r} onSelect={handleSelect} />)}
       </div>
 
       {/* Sign in link */}
-      <p className="relative text-white/32 text-[13px] mt-8">
+      <p className="relative text-white/32 text-[13px] mt-6">
         Already have an account?{' '}
         <a href="/login" className="text-purple-400 hover:text-purple-300 font-medium transition-colors">
           Sign in

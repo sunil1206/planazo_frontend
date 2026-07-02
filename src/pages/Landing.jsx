@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import logo from '../assets/logo.png'
 
 // ── Icon helper ───────────────────────────────────────────────────────────────
@@ -33,19 +33,19 @@ const Icons = {
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 const SERVICES = [
-  { icon: Icons.ring,   title: 'Wedding Planning',  desc: 'Manage every detail of your big day from one beautifully organised space.', color: '#a78bfa' },
-  { icon: Icons.robot,  title: 'AI Planner',         desc: 'Let AI build your complete vendor plan, timeline, and checklist instantly.',  color: '#38bdf8' },
-  { icon: Icons.users,  title: 'Guest Management',   desc: 'Track RSVPs, manage seating and send digital invitations with ease.',         color: '#34d399' },
-  { icon: Icons.dollar, title: 'Budget Tracker',     desc: 'Keep spending in check with real-time budget vs. actual cost comparison.',     color: '#fbbf24' },
+  { icon: Icons.ring,   title: 'Wedding Planning',  desc: 'Manage every detail of your big day from one beautifully organised space.', color: '#a78bfa', glow: 'rgba(167,139,250,0.22)' },
+  { icon: Icons.robot,  title: 'AI Planner',         desc: 'Let AI build your complete vendor plan, timeline, and checklist instantly.',  color: '#38bdf8', glow: 'rgba(56,189,248,0.22)'  },
+  { icon: Icons.users,  title: 'Guest Management',   desc: 'Track RSVPs, manage seating and send digital invitations with ease.',         color: '#34d399', glow: 'rgba(52,211,153,0.22)'  },
+  { icon: Icons.dollar, title: 'Budget Tracker',     desc: 'Keep spending in check with real-time budget vs. actual cost comparison.',     color: '#fbbf24', glow: 'rgba(251,191,36,0.22)'  },
 ]
 
 const VENDORS = [
-  { icon: Icons.camera,  label: 'Photographers' },
-  { icon: Icons.building,label: 'Venues' },
-  { icon: Icons.bag,     label: 'Caterers' },
-  { icon: Icons.heart,   label: 'Bridal Attire' },
-  { icon: Icons.palette, label: 'Decorators' },
-  { icon: Icons.music,   label: 'DJs & Music' },
+  { icon: Icons.camera,   label: 'Photographers' },
+  { icon: Icons.building, label: 'Venues'        },
+  { icon: Icons.bag,      label: 'Caterers'      },
+  { icon: Icons.heart,    label: 'Bridal Attire' },
+  { icon: Icons.palette,  label: 'Decorators'    },
+  { icon: Icons.music,    label: 'DJs & Music'   },
 ]
 
 const GIFT_FEATURES = [
@@ -55,17 +55,89 @@ const GIFT_FEATURES = [
   'AI-powered personalised gift recommendations',
 ]
 
+// ── 3D tilt card ──────────────────────────────────────────────────────────────
+function TiltCard({ children, className = '', style = {}, glowColor, onClick }) {
+  const ref = useRef(null)
+
+  const onMove = (e) => {
+    const el = ref.current
+    const r  = el.getBoundingClientRect()
+    const rx = -((e.clientY - r.top  - r.height / 2) / (r.height / 2)) * 8
+    const ry =  ((e.clientX - r.left - r.width  / 2) / (r.width  / 2)) * 8
+    el.style.transform = `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg) translateZ(8px)`
+    if (glowColor) el.style.boxShadow = `0 20px 56px ${glowColor}, 0 0 0 1px rgba(255,255,255,0.07) inset`
+  }
+
+  const onLeave = () => {
+    const el = ref.current
+    el.style.transform = 'perspective(900px) rotateX(0deg) rotateY(0deg) translateZ(0px)'
+    if (glowColor) el.style.boxShadow = ''
+  }
+
+  return (
+    <div ref={ref} onMouseMove={onMove} onMouseLeave={onLeave} onClick={onClick}
+      className={className}
+      style={{ ...style, transition: 'transform 0.22s ease, box-shadow 0.22s ease' }}>
+      {children}
+    </div>
+  )
+}
+
+// ── Scroll reveal ─────────────────────────────────────────────────────────────
+function Reveal({ children, delay = 0, className = '' }) {
+  const ref = useRef(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { el.classList.add('visible'); obs.disconnect() } },
+      { threshold: 0.1 }
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+  return (
+    <div ref={ref} className={`reveal ${className}`} style={{ transitionDelay: `${delay}ms` }}>
+      {children}
+    </div>
+  )
+}
+
+// ── Logo loading overlay ──────────────────────────────────────────────────────
+function LoadingOverlay() {
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/65 backdrop-blur-md">
+      <div className="relative flex items-center justify-center">
+        <div className="loading-ring-outer" />
+        <div className="loading-ring-inner" />
+        <img src={logo} alt="Planazo" className="w-[72px] h-[72px] relative z-10 logo-pulse" />
+      </div>
+      <p className="mt-7 text-white/40 text-[11px] tracking-[0.25em] uppercase font-medium animate-pulse select-none">
+        Loading
+      </p>
+    </div>
+  )
+}
+
 // ── Landing page ──────────────────────────────────────────────────────────────
 export default function Landing() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [loading,  setLoading]  = useState(false)
 
   const scrollTo = (id) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
     setMenuOpen(false)
   }
 
+  const goTo = (href) => {
+    setLoading(true)
+    setTimeout(() => { window.location.href = href }, 650)
+  }
+
   return (
     <div className="min-h-screen bg-[#060412] text-white overflow-x-hidden">
+
+      {loading && <LoadingOverlay />}
 
       {/* ── Fixed background ─────────────────────────────────────── */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
@@ -77,16 +149,15 @@ export default function Landing() {
       </div>
 
       {/* ── Navbar ───────────────────────────────────────────────── */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-5 sm:px-10 h-16
-        bg-white/[0.04] backdrop-blur-xl border-b border-white/[0.07]">
+      <nav className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-5 sm:px-10 h-16
+        bg-white/[0.04] backdrop-blur-xl border-b border-white/[0.07]"
+        style={{ animation: 'fade-up 0.45s ease both' }}>
 
-        {/* Logo */}
         <div className="flex items-center gap-2.5">
           <img src={logo} alt="Planazo" className="w-8 h-8 drop-shadow-[0_0_10px_rgba(139,92,246,0.65)]" />
           <span className="font-bold text-[17px] tracking-tight">Planazo</span>
         </div>
 
-        {/* Desktop nav links */}
         <div className="hidden sm:flex items-center gap-1">
           <button onClick={() => scrollTo('vendors')}
             className="px-4 py-2 text-[14px] font-medium text-white/60 hover:text-white rounded-xl hover:bg-white/[0.07] transition-all duration-200">
@@ -98,17 +169,15 @@ export default function Landing() {
           </button>
         </div>
 
-        {/* Right side */}
         <div className="flex items-center gap-3">
-          <a href="/select-role"
+          <button onClick={() => goTo('/select-role')}
             className="px-4 py-2 rounded-xl text-[13.5px] font-semibold text-white
               bg-gradient-to-r from-purple-600 to-indigo-600
               shadow-[0_4px_16px_rgba(124,58,237,0.4)]
               hover:shadow-[0_4px_22px_rgba(124,58,237,0.6)]
-              hover:-translate-y-px active:translate-y-0
-              transition-all duration-200">
+              hover:-translate-y-px active:translate-y-0 transition-all duration-200">
             Sign In
-          </a>
+          </button>
           <button className="sm:hidden text-white/55 hover:text-white p-1 transition-colors"
             onClick={() => setMenuOpen(p => !p)}>
             {menuOpen ? Icons.close : Icons.menu}
@@ -135,31 +204,42 @@ export default function Landing() {
       {/* ── Hero ─────────────────────────────────────────────────── */}
       <section className="relative min-h-screen flex flex-col items-center justify-center text-center px-5 pt-24 pb-16">
 
-        {/* Badge */}
+        {/* Floating badge */}
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full mb-6
           bg-purple-500/[0.13] border border-purple-500/[0.28] text-purple-300
-          text-[11px] font-semibold tracking-[0.14em] uppercase">
+          text-[11px] font-semibold tracking-[0.14em] uppercase"
+          style={{ animation: 'fade-up 0.5s 0.1s ease both, float-badge 3s 0.6s ease-in-out infinite' }}>
           <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
           India's AI-Powered Wedding Platform
         </div>
 
         {/* Headline */}
-        <h1 className="text-4xl sm:text-5xl lg:text-[62px] font-extrabold tracking-tight leading-[1.1] mb-5 max-w-3xl">
+        <h1 className="text-4xl sm:text-5xl lg:text-[62px] font-extrabold tracking-tight leading-[1.1] mb-5 max-w-3xl"
+          style={{ animation: 'fade-up 0.6s 0.22s ease both' }}>
           Plan Your Perfect
           <br />
-          <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
+          <span style={{
+            background: 'linear-gradient(90deg, #c084fc, #f472b6, #60a5fa, #c084fc)',
+            backgroundSize: '200% auto',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            animation: 'gradient-shift 4s linear infinite',
+          }}>
             Wedding Journey
           </span>
         </h1>
 
-        <p className="text-white/45 text-[15px] sm:text-[16px] leading-relaxed max-w-lg mb-9">
+        <p className="text-white/45 text-[15px] sm:text-[16px] leading-relaxed max-w-lg mb-9"
+          style={{ animation: 'fade-up 0.6s 0.38s ease both' }}>
           Find verified vendors, build your wedding website, manage guests and share
           AI-powered memories — all in one beautiful place.
         </p>
 
         {/* CTAs */}
-        <div className="flex flex-col sm:flex-row items-center gap-3 mb-16">
-          <a href="/select-role"
+        <div className="flex flex-col sm:flex-row items-center gap-3 mb-16"
+          style={{ animation: 'fade-up 0.6s 0.52s ease both' }}>
+          <button onClick={() => goTo('/select-role')}
             className="flex items-center gap-2 px-7 py-3 rounded-xl text-[15px] font-semibold text-white
               bg-gradient-to-r from-purple-600 to-indigo-600
               shadow-[0_4px_24px_rgba(124,58,237,0.45)]
@@ -167,7 +247,7 @@ export default function Landing() {
               hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200">
             Get Started — It&apos;s Free
             <span className="opacity-80">{Icons.arrow}</span>
-          </a>
+          </button>
           <button onClick={() => scrollTo('vendors')}
             className="flex items-center gap-2 px-7 py-3 rounded-xl text-[15px] font-medium text-white/65 hover:text-white
               bg-white/[0.06] border border-white/[0.10]
@@ -178,12 +258,13 @@ export default function Landing() {
         </div>
 
         {/* Stats */}
-        <div className="flex flex-wrap justify-center gap-8 sm:gap-14">
+        <div className="flex flex-wrap justify-center gap-8 sm:gap-14"
+          style={{ animation: 'fade-up 0.6s 0.68s ease both' }}>
           {[
-            { val: '1,240+', label: 'Couples Served' },
+            { val: '1,240+', label: 'Couples Served'  },
             { val: '87+',    label: 'Verified Vendors' },
             { val: '42K+',   label: 'AI Photos Shared' },
-            { val: 'Free',   label: 'Wedding Website' },
+            { val: 'Free',   label: 'Wedding Website'  },
           ].map(s => (
             <div key={s.label} className="text-center">
               <p className="text-2xl sm:text-3xl font-bold text-white">{s.val}</p>
@@ -193,9 +274,9 @@ export default function Landing() {
         </div>
 
         {/* Scroll cue */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center animate-bounce">
-          <div className="w-5 h-8 rounded-full border border-white/20 flex items-start justify-center pt-1.5">
-            <div className="w-1 h-2 rounded-full bg-white/30" />
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center animate-bounce opacity-40">
+          <div className="w-5 h-8 rounded-full border border-white/30 flex items-start justify-center pt-1.5">
+            <div className="w-1 h-2 rounded-full bg-white/50" />
           </div>
         </div>
       </section>
@@ -204,28 +285,29 @@ export default function Landing() {
       <section className="relative px-5 sm:px-10 py-20">
         <div className="max-w-5xl mx-auto">
 
-          <div className="text-center mb-12">
+          <Reveal className="text-center mb-12">
             <p className="text-[11px] font-bold tracking-[0.2em] uppercase text-purple-400/75 mb-3">Everything You Need</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">Your complete wedding toolkit</h2>
             <p className="text-white/38 text-[15px] max-w-md mx-auto">Every tool built specifically for Indian weddings — free, forever.</p>
-          </div>
+          </Reveal>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {SERVICES.map(s => (
-              <div key={s.title}
-                className="glass-card p-6 flex items-start gap-4 hover:border-white/20 hover:-translate-y-0.5 transition-all duration-300">
-                <div className="w-11 h-11 rounded-2xl shrink-0 flex items-center justify-center"
-                  style={{ background: `${s.color}16`, color: s.color, border: `1px solid ${s.color}28` }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    {s.icon.props.children}
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-white font-semibold text-[15px] mb-1">{s.title}</h3>
-                  <p className="text-white/38 text-[13px] leading-relaxed">{s.desc}</p>
-                </div>
-              </div>
+            {SERVICES.map((s, i) => (
+              <Reveal key={s.title} delay={i * 80}>
+                <TiltCard className="glass-card p-6 flex items-start gap-4 h-full" glowColor={s.glow}>
+                  <div className="w-11 h-11 rounded-2xl shrink-0 flex items-center justify-center"
+                    style={{ background: `${s.color}16`, color: s.color, border: `1px solid ${s.color}28` }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      {s.icon.props.children}
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-white font-semibold text-[15px] mb-1">{s.title}</h3>
+                    <p className="text-white/38 text-[13px] leading-relaxed">{s.desc}</p>
+                  </div>
+                </TiltCard>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -233,8 +315,6 @@ export default function Landing() {
 
       {/* ── Vendors ──────────────────────────────────────────────── */}
       <section id="vendors" className="relative px-5 sm:px-10 py-20">
-
-        {/* Amber glow */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
           <div className="absolute w-[700px] h-[700px] rounded-full blur-[130px]"
             style={{ background: 'radial-gradient(circle, rgba(245,158,11,0.14), rgba(234,88,12,0.06))', right: '-200px', top: '50%', transform: 'translateY(-50%)' }} />
@@ -243,8 +323,7 @@ export default function Landing() {
         <div className="relative max-w-5xl mx-auto">
           <div className="flex flex-col lg:flex-row gap-12 lg:gap-20 items-center">
 
-            {/* Text side */}
-            <div className="flex-1">
+            <Reveal className="flex-1">
               <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-bold tracking-[0.14em] uppercase mb-5"
                 style={{ background: 'rgba(245,158,11,0.11)', color: '#fbbf24', border: '1px solid rgba(245,158,11,0.25)' }}>
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
@@ -253,40 +332,39 @@ export default function Landing() {
               <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4 leading-tight">
                 Find the best vendors
                 <br />
-                <span style={{ background: 'linear-gradient(90deg, #f59e0b, #fb923c)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                <span style={{ background: 'linear-gradient(90deg, #f59e0b, #fb923c)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
                   for your wedding
                 </span>
               </h2>
               <p className="text-white/40 text-[14px] leading-relaxed mb-7 max-w-md">
                 Connect with India's most trusted wedding professionals. Every vendor is verified, reviewed, and ready to make your day perfect.
               </p>
-              <a href="/select-role"
+              <button onClick={() => goTo('/select-role')}
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[14px] font-semibold text-white
                   hover:-translate-y-0.5 transition-all duration-200"
                 style={{ background: 'linear-gradient(135deg, #f59e0b, #ea580c)', boxShadow: '0 4px 20px rgba(245,158,11,0.38)' }}>
                 Browse Vendors
                 <span className="opacity-80">{Icons.arrow}</span>
-              </a>
-            </div>
+              </button>
+            </Reveal>
 
-            {/* Vendor grid */}
             <div className="flex-1 w-full grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {VENDORS.map(v => (
-                <div key={v.label}
-                  className="glass-card p-4 flex flex-col items-center gap-2.5 text-center
-                    hover:-translate-y-1 transition-all duration-200 group cursor-pointer"
-                  style={{ '--tw-border-opacity': 1 }}
-                  onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(245,158,11,0.3)'}
-                  onMouseLeave={e => e.currentTarget.style.borderColor = ''}>
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-                    style={{ background: 'rgba(245,158,11,0.11)', color: '#fbbf24' }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      {v.icon.props.children}
-                    </svg>
-                  </div>
-                  <span className="text-white/60 text-[13px] font-medium group-hover:text-white/90 transition-colors">{v.label}</span>
-                </div>
+              {VENDORS.map((v, i) => (
+                <Reveal key={v.label} delay={i * 60}>
+                  <TiltCard
+                    className="glass-card p-4 flex flex-col items-center gap-2.5 text-center cursor-pointer group"
+                    glowColor="rgba(245,158,11,0.2)"
+                    onClick={() => goTo('/select-role')}>
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+                      style={{ background: 'rgba(245,158,11,0.11)', color: '#fbbf24' }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        {v.icon.props.children}
+                      </svg>
+                    </div>
+                    <span className="text-white/60 text-[13px] font-medium group-hover:text-white/90 transition-colors">{v.label}</span>
+                  </TiltCard>
+                </Reveal>
               ))}
             </div>
 
@@ -296,8 +374,6 @@ export default function Landing() {
 
       {/* ── Gifts ────────────────────────────────────────────────── */}
       <section id="gifts" className="relative px-5 sm:px-10 py-20">
-
-        {/* Pink glow */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
           <div className="absolute w-[700px] h-[700px] rounded-full blur-[130px]"
             style={{ background: 'radial-gradient(circle, rgba(236,72,153,0.14), rgba(168,85,247,0.06))', left: '-200px', top: '50%', transform: 'translateY(-50%)' }} />
@@ -306,8 +382,7 @@ export default function Landing() {
         <div className="relative max-w-5xl mx-auto">
           <div className="flex flex-col lg:flex-row-reverse gap-12 lg:gap-20 items-center">
 
-            {/* Text side */}
-            <div className="flex-1">
+            <Reveal className="flex-1">
               <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-bold tracking-[0.14em] uppercase mb-5"
                 style={{ background: 'rgba(236,72,153,0.11)', color: '#f472b6', border: '1px solid rgba(236,72,153,0.25)' }}>
                 <span className="w-1.5 h-1.5 rounded-full bg-pink-400" />
@@ -316,7 +391,7 @@ export default function Landing() {
               <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4 leading-tight">
                 Curated gifts that
                 <br />
-                <span style={{ background: 'linear-gradient(90deg, #ec4899, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                <span style={{ background: 'linear-gradient(90deg, #ec4899, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
                   celebrate love
                 </span>
               </h2>
@@ -336,39 +411,37 @@ export default function Landing() {
                   </li>
                 ))}
               </ul>
-              <a href="/select-role"
+              <button onClick={() => goTo('/select-role')}
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[14px] font-semibold text-white
                   hover:-translate-y-0.5 transition-all duration-200"
                 style={{ background: 'linear-gradient(135deg, #ec4899, #a855f7)', boxShadow: '0 4px 20px rgba(236,72,153,0.38)' }}>
                 Explore Gifts
                 <span className="opacity-80">{Icons.arrow}</span>
-              </a>
-            </div>
+              </button>
+            </Reveal>
 
-            {/* Gift feature cards */}
             <div className="flex-1 w-full grid grid-cols-2 gap-3">
               {[
-                { label: 'Gift Registry',    sub: 'Manage your wishlist',     color: '#f472b6', icon: Icons.gift  },
-                { label: 'Timed Delivery',   sub: 'Send on your date',        color: '#a78bfa', icon: Icons.check },
-                { label: 'AI Picks',         sub: 'Smart recommendations',    color: '#38bdf8', icon: Icons.bolt  },
-                { label: 'Verified Sellers', sub: '100+ curated brands',      color: '#34d399', icon: Icons.star  },
-              ].map(c => (
-                <div key={c.label}
-                  className="glass-card p-5 flex flex-col gap-3 hover:-translate-y-1 transition-all duration-200"
-                  onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(236,72,153,0.28)'}
-                  onMouseLeave={e => e.currentTarget.style.borderColor = ''}>
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                    style={{ background: `${c.color}16`, color: c.color }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      {c.icon.props.children}
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-white font-semibold text-[13.5px]">{c.label}</p>
-                    <p className="text-white/35 text-[11.5px] mt-0.5">{c.sub}</p>
-                  </div>
-                </div>
+                { label: 'Gift Registry',    sub: 'Manage your wishlist',  color: '#f472b6', icon: Icons.gift  },
+                { label: 'Timed Delivery',   sub: 'Send on your date',     color: '#a78bfa', icon: Icons.check },
+                { label: 'AI Picks',         sub: 'Smart recommendations', color: '#38bdf8', icon: Icons.bolt  },
+                { label: 'Verified Sellers', sub: '100+ curated brands',   color: '#34d399', icon: Icons.star  },
+              ].map((c, i) => (
+                <Reveal key={c.label} delay={i * 70}>
+                  <TiltCard className="glass-card p-5 flex flex-col gap-3 h-full" glowColor={`${c.color}30`}>
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                      style={{ background: `${c.color}16`, color: c.color }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        {c.icon.props.children}
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-white font-semibold text-[13.5px]">{c.label}</p>
+                      <p className="text-white/35 text-[11.5px] mt-0.5">{c.sub}</p>
+                    </div>
+                  </TiltCard>
+                </Reveal>
               ))}
             </div>
 
@@ -378,44 +451,36 @@ export default function Landing() {
 
       {/* ── Final CTA ────────────────────────────────────────────── */}
       <section className="relative px-5 sm:px-10 py-20">
-        <div className="max-w-2xl mx-auto text-center">
-          <div className="glass-card p-10 sm:p-14 relative overflow-hidden"
+        <Reveal className="max-w-2xl mx-auto text-center">
+          <TiltCard
+            className="glass-card p-10 sm:p-14 relative overflow-hidden"
+            glowColor="rgba(124,58,237,0.32)"
             style={{
               background: 'linear-gradient(135deg, rgba(109,28,209,0.55) 0%, rgba(79,46,180,0.45) 40%, rgba(37,99,235,0.35) 100%)',
               border: '1px solid rgba(255,255,255,0.13)',
               boxShadow: '0 8px 48px rgba(79,46,180,0.35)',
             }}>
-            {/* Glass sheen */}
             <div className="absolute inset-0 pointer-events-none"
               style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.07) 0%, transparent 55%)' }} />
-
             <div className="relative">
               <div className="w-14 h-14 rounded-2xl mx-auto mb-6 flex items-center justify-center"
                 style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)' }}>
                 <img src={logo} alt="Planazo" className="w-9 h-9" />
               </div>
-              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3 leading-tight">
-                Start planning today
-              </h2>
-              <p className="text-white/45 text-[15px] mb-8">
-                All tools free, forever. Create your account and begin your wedding journey.
-              </p>
-              <a href="/select-role"
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">Start planning today</h2>
+              <p className="text-white/45 text-[15px] mb-8">All tools free, forever. Create your account and begin your wedding journey.</p>
+              <button onClick={() => goTo('/select-role')}
                 className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl text-[15px] font-bold
                   hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
-                style={{
-                  background: 'rgba(255,255,255,0.95)',
-                  color: '#4f46e5',
-                  boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
-                }}>
+                style={{ background: 'rgba(255,255,255,0.95)', color: '#4f46e5', boxShadow: '0 4px 24px rgba(0,0,0,0.3)' }}>
                 Sign In to Planazo
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M5 12h14M12 5l7 7-7 7"/>
                 </svg>
-              </a>
+              </button>
             </div>
-          </div>
-        </div>
+          </TiltCard>
+        </Reveal>
       </section>
 
       {/* ── Footer ───────────────────────────────────────────────── */}
@@ -426,7 +491,7 @@ export default function Landing() {
             <span className="text-white/35 text-[13px]">© 2026 Planazo · Made with ♥ in Kerala, India</span>
           </div>
           <div className="flex items-center gap-6 text-white/30 text-[13px]">
-            <a href="/select-role" className="hover:text-white/70 transition-colors">Sign In</a>
+            <button onClick={() => goTo('/select-role')} className="hover:text-white/70 transition-colors">Sign In</button>
             <button onClick={() => scrollTo('vendors')} className="hover:text-white/70 transition-colors">Vendors</button>
             <button onClick={() => scrollTo('gifts')}   className="hover:text-white/70 transition-colors">Gifts</button>
           </div>
