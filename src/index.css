@@ -335,3 +335,20 @@ html, body, #root {
   opacity: 1;
   transform: translateY(0);
 }
+
+@keyframes ai-scan {
+  0%   { top: 8%;  opacity: 0; }
+  6%   { top: 10%; opacity: 1; }
+  90%  { top: 83%; opacity: 1; }
+  100% { top: 88%; opacity: 0; }
+}
+
+@keyframes face-ping {
+  0%, 100% { opacity: 1;   transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(1.12); }
+}
+
+@keyframes photo-count-up {
+  0%   { content: '0';  }
+  100% { content: '14'; }
+}

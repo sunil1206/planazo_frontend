@@ -459,6 +459,242 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* ── AI Photo Gallery ─────────────────────────────────────── */}
+      <section className="relative px-5 sm:px-10 py-20">
+        <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+          <div className="absolute w-[650px] h-[650px] rounded-full blur-[130px]"
+            style={{ background: 'radial-gradient(circle, rgba(251,113,133,0.1), rgba(167,139,250,0.07))', right: '-160px', top: '50%', transform: 'translateY(-50%)' }} />
+          <div className="absolute w-[500px] h-[500px] rounded-full blur-[120px]"
+            style={{ background: 'radial-gradient(circle, rgba(167,139,250,0.09), transparent)', left: '-120px', top: '30%' }} />
+        </div>
+
+        <div className="relative max-w-5xl mx-auto">
+          <div className="flex flex-col lg:flex-row gap-12 lg:gap-16 items-center">
+
+            {/* ── Text ─────────────────────────────────────────────── */}
+            <Reveal className="flex-1 order-2 lg:order-1">
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-bold tracking-[0.14em] uppercase mb-5"
+                style={{ background: 'rgba(251,113,133,0.11)', color: '#fb7185', border: '1px solid rgba(251,113,133,0.28)' }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
+                </svg>
+                AI-Powered Gallery
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4 leading-tight">
+                AI finds your photos
+                <br />
+                <span style={{
+                  background: 'linear-gradient(90deg, #fb7185, #f472b6, #a78bfa, #fb7185)',
+                  backgroundSize: '200% auto',
+                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+                  animation: 'gradient-shift 3.5s linear infinite',
+                }}>
+                  instantly.
+                </span>
+              </h2>
+              <p className="text-white/40 text-[14px] leading-relaxed mb-6 max-w-md">
+                Upload one selfie and our AI scans the entire wedding gallery to find every photo of you — in seconds. No more scrolling through hundreds of photos.
+              </p>
+              <ul className="space-y-2.5 mb-7">
+                {[
+                  'Works with 100+ photo galleries',
+                  'Finds group photos too',
+                  'Download all your photos as ZIP',
+                  'Auto-enhanced for perfect brightness',
+                ].map(f => (
+                  <li key={f} className="flex items-center gap-2.5 text-white/55 text-[13.5px]">
+                    <span className="w-5 h-5 rounded-full shrink-0 flex items-center justify-center"
+                      style={{ background: 'rgba(20,184,166,0.14)', color: '#2dd4bf' }}>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 6L9 17l-5-5"/>
+                      </svg>
+                    </span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <button onClick={() => goTo('/select-role')}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[14px] font-semibold text-white
+                  hover:-translate-y-0.5 transition-all duration-200"
+                style={{ background: 'linear-gradient(135deg, #fb7185, #a855f7)', boxShadow: '0 4px 20px rgba(251,113,133,0.35)' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
+                </svg>
+                Try AI Photo Match
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </button>
+            </Reveal>
+
+            {/* ── Photo visual ─────────────────────────────────────── */}
+            <div className="flex-1 w-full max-w-[440px] mx-auto lg:mx-0 order-1 lg:order-2">
+              <Reveal delay={120}>
+                <TiltCard glowColor="rgba(251,113,133,0.28)" className="relative">
+                  <div className="relative overflow-hidden" style={{ borderRadius: '24px', aspectRatio: '4/3' }}>
+
+                    {/* Romantic night-garden gradient "photo" */}
+                    <div className="absolute inset-0" style={{
+                      background: 'linear-gradient(168deg, #04020e 0%, #0c0428 16%, #18063e 28%, #280a50 38%, #420f3e 48%, #62162a 58%, #421420 68%, #0d1e0a 80%, #060e04 90%, #020503 100%)'
+                    }} />
+
+                    {/* Moon */}
+                    <div className="absolute rounded-full pointer-events-none" style={{
+                      width: 72, height: 72, top: '7%', right: '20%',
+                      background: 'radial-gradient(circle at 38% 35%, #fff8e8 0%, #ffe090 40%, #ffc040 65%, rgba(255,170,30,0.25) 85%, transparent 100%)',
+                      boxShadow: '0 0 28px rgba(255,210,60,0.42), 0 0 80px rgba(255,180,30,0.14)',
+                    }} />
+
+                    {/* Stars */}
+                    {[
+                      { t: '5%',  l: '8%',  s: 2   },
+                      { t: '9%',  l: '34%', s: 1.5 },
+                      { t: '4%',  l: '55%', s: 2   },
+                      { t: '13%', l: '12%', s: 1.5 },
+                      { t: '3%',  l: '69%', s: 2.5 },
+                      { t: '17%', l: '82%', s: 1.5 },
+                      { t: '7%',  l: '90%', s: 2   },
+                      { t: '20%', l: '5%',  s: 1.5 },
+                    ].map((st, i) => (
+                      <div key={i} className="absolute rounded-full pointer-events-none"
+                        style={{ top: st.t, left: st.l, width: st.s, height: st.s,
+                          background: 'rgba(255,248,220,0.9)',
+                          boxShadow: `0 0 ${st.s * 2.5}px rgba(255,248,200,0.7)` }} />
+                    ))}
+
+                    {/* String fairy lights */}
+                    <svg className="absolute top-0 left-0 w-full pointer-events-none" viewBox="0 0 400 65" preserveAspectRatio="none" style={{ height: '17%' }}>
+                      <path d="M-5,16 Q35,36 72,18 Q112,4 148,24 Q188,40 224,18 Q264,2 302,22 Q340,36 410,16"
+                        stroke="rgba(255,210,60,0.25)" strokeWidth="0.8" fill="none" />
+                      {[
+                        [8,18],[48,30],[88,13],[128,26],[168,34],[208,14],[248,8],[288,24],[328,32],[368,12],[405,20],
+                      ].map(([cx, cy], i) => (
+                        <circle key={i} cx={cx} cy={cy} r={i % 3 === 1 ? 3.5 : 2.5}
+                          fill={i % 2 === 0 ? 'rgba(255,228,80,0.94)' : 'rgba(255,190,55,0.78)'} />
+                      ))}
+                    </svg>
+
+                    {/* Bokeh orbs */}
+                    {[
+                      { t: '22%', l: '6%',  w: 16, c: 'rgba(255,200,55,0.18)', b: 6 },
+                      { t: '42%', l: '80%', w: 13, c: 'rgba(251,113,133,0.2)', b: 5 },
+                      { t: '58%', l: '14%', w: 10, c: 'rgba(167,139,250,0.2)', b: 4 },
+                      { t: '28%', l: '90%', w: 18, c: 'rgba(255,180,35,0.15)', b: 8 },
+                      { t: '67%', l: '88%', w: 11, c: 'rgba(255,215,65,0.18)', b: 5 },
+                    ].map((b, i) => (
+                      <div key={i} className="absolute rounded-full pointer-events-none"
+                        style={{ top: b.t, left: b.l, width: b.w, height: b.w, background: b.c, filter: `blur(${b.b}px)` }} />
+                    ))}
+
+                    {/* Dark foliage — back layer */}
+                    <svg className="absolute bottom-0 left-0 w-full pointer-events-none" viewBox="0 0 400 115" preserveAspectRatio="none" style={{ height: '34%' }}>
+                      <path d="M0,115 L0,78 Q18,56 34,72 Q50,50 68,66 Q85,44 108,62 Q128,42 155,60 Q175,40 200,58 Q222,38 248,56 Q268,36 294,58 Q314,38 340,56 Q360,34 385,56 L400,58 L400,115 Z" fill="#060e04" />
+                      <path d="M0,115 L0,90 Q14,74 28,88 Q42,70 58,84 Q74,66 94,82 Q112,64 135,82 Q155,65 178,82 Q198,62 222,80 Q244,64 268,80 Q288,62 312,80 Q334,64 358,80 Q380,65 400,80 L400,115 Z" fill="#040b03" />
+                    </svg>
+
+                    {/* Wedding couple silhouette */}
+                    <svg className="absolute pointer-events-none"
+                      viewBox="0 0 136 210"
+                      style={{ width: '36%', bottom: '28%', left: '50%', transform: 'translateX(-50%)' }}>
+                      {/* Woman (left) ── */}
+                      {/* Head */}
+                      <ellipse cx="40" cy="32" rx="12" ry="14" fill="#01030a" />
+                      {/* Veil */}
+                      <path d="M28,20 Q40,6 52,20 Q56,30 54,42 L40,46 L26,42 Q24,30 28,20 Z" fill="#010306" opacity="0.8" />
+                      {/* Neck + shoulders */}
+                      <path d="M34,46 Q28,50 24,56 L30,60 Q36,54 40,52 Q44,54 50,60 L56,56 Q52,50 46,46 Z" fill="#01030a" />
+                      {/* Bodice */}
+                      <path d="M24,56 Q16,68 14,84 Q12,96 16,104 L64,104 Q68,96 66,84 Q64,68 56,56 Z" fill="#01030a" />
+                      {/* Skirt — A-line flare */}
+                      <path d="M16,100 Q6,116 2,136 Q-1,152 2,168 Q10,178 40,178 Q70,178 78,168 Q81,152 78,136 Q74,116 64,100 Q56,110 40,112 Q24,110 16,100 Z" fill="#01030a" />
+                      {/* Bouquet in hands */}
+                      <ellipse cx="22" cy="116" rx="9" ry="7" fill="#010308" />
+
+                      {/* Man (right, taller) ── */}
+                      {/* Head */}
+                      <ellipse cx="96" cy="25" rx="13" ry="15" fill="#01030a" />
+                      {/* Jacket */}
+                      <path d="M83,41 Q72,56 70,80 Q68,102 72,122 Q77,134 96,134 Q115,134 120,122 Q124,102 122,80 Q120,56 109,41 Z" fill="#01030a" />
+                      {/* Lapels */}
+                      <path d="M89,41 L96,60 L103,41" fill="none" stroke="#020610" strokeWidth="1.5" />
+                      {/* Trousers */}
+                      <path d="M72,118 Q68,140 66,168 Q65,178 76,178 Q86,178 90,170 L96,140 L102,170 Q106,178 116,178 Q127,178 126,168 Q124,140 120,118 Z" fill="#01030a" />
+
+                      {/* His arm around her waist */}
+                      <path d="M72,82 Q60,92 54,99 Q48,105 42,102" stroke="#01030a" strokeWidth="10" strokeLinecap="round" fill="none" />
+                      {/* Her arm reaching to him */}
+                      <path d="M56,88 Q66,82 72,80" stroke="#01030a" strokeWidth="8" strokeLinecap="round" fill="none" />
+                    </svg>
+
+                    {/* AI scan line */}
+                    <div className="absolute left-0 right-0 pointer-events-none" style={{
+                      height: '1.5px',
+                      top: '8%',
+                      background: 'linear-gradient(90deg, transparent 0%, rgba(167,139,250,0) 6%, rgba(167,139,250,0.9) 28%, rgba(251,113,133,1) 50%, rgba(167,139,250,0.9) 72%, rgba(167,139,250,0) 94%, transparent 100%)',
+                      boxShadow: '0 0 14px rgba(251,113,133,0.55), 0 0 4px rgba(167,139,250,0.9)',
+                      animation: 'ai-scan 4s ease-in-out infinite',
+                    }} />
+
+                    {/* Face detection UI */}
+                    <div className="pointer-events-none absolute" style={{
+                      width: 44, height: 44,
+                      top: 'calc(21% - 22px)',
+                      left: 'calc(34% - 22px)',
+                    }}>
+                      <div className="absolute inset-0 rounded-full" style={{
+                        border: '1.5px dashed rgba(167,139,250,0.8)',
+                        boxShadow: '0 0 12px rgba(167,139,250,0.35)',
+                        animation: 'face-ping 2.2s ease-in-out infinite',
+                      }} />
+                      {/* Corner brackets */}
+                      {[
+                        { top: -3, left: -3, borderTop: '2px solid #a78bfa', borderLeft: '2px solid #a78bfa',   borderRadius: '2px 0 0 0'     },
+                        { top: -3, right: -3, borderTop: '2px solid #a78bfa', borderRight: '2px solid #a78bfa',  borderRadius: '0 2px 0 0'     },
+                        { bottom: -3, left: -3, borderBottom: '2px solid #a78bfa', borderLeft: '2px solid #a78bfa',  borderRadius: '0 0 0 2px' },
+                        { bottom: -3, right: -3, borderBottom: '2px solid #a78bfa', borderRight: '2px solid #a78bfa', borderRadius: '0 0 2px 0' },
+                      ].map((s, i) => (
+                        <div key={i} className="absolute" style={{ width: 10, height: 10, ...s }} />
+                      ))}
+                    </div>
+
+                    {/* Photo count badge — top-left */}
+                    <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-lg"
+                      style={{ background: 'rgba(8,4,24,0.8)', backdropFilter: 'blur(12px)', border: '1px solid rgba(167,139,250,0.28)' }}>
+                      <div className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
+                      <span className="text-violet-300 text-[10.5px] font-bold tracking-wide">42K+ photos</span>
+                    </div>
+
+                    {/* Noise overlay for photo texture */}
+                    <div className="absolute inset-0 pointer-events-none noise-overlay" style={{ opacity: 0.04 }} />
+
+                    {/* AI match result card — bottom */}
+                    <div className="absolute bottom-3.5 left-3.5 right-3.5 px-3.5 py-2.5 rounded-2xl flex items-center gap-3"
+                      style={{ background: 'rgba(6,3,18,0.88)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                      {/* Avatar */}
+                      <div className="w-9 h-9 rounded-full shrink-0 flex items-center justify-center text-[17px]"
+                        style={{ background: 'linear-gradient(135deg, #7c3aed, #ec4899)', border: '2px solid rgba(255,255,255,0.12)' }}>
+                        👩
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white/38 text-[9px] tracking-[0.18em] uppercase font-bold mb-0.5">AI Matching</p>
+                        <p className="text-white font-bold text-[13px]">14 Photos of you found! 🎉</p>
+                      </div>
+                      {/* Live indicator */}
+                      <div className="relative w-3 h-3 shrink-0">
+                        <div className="absolute inset-0 rounded-full bg-rose-500 animate-ping opacity-75" style={{ animationDuration: '1.3s' }} />
+                        <div className="relative w-3 h-3 rounded-full bg-rose-400" />
+                      </div>
+                    </div>
+
+                  </div>
+                </TiltCard>
+              </Reveal>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
       {/* ── Final CTA ────────────────────────────────────────────── */}
       <section className="relative px-5 sm:px-10 py-20">
         <Reveal className="max-w-2xl mx-auto text-center">
