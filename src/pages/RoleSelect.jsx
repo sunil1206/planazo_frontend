@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import logo from '../assets/logo.png'
 
 // ── Role definitions ──────────────────────────────────────────────────────────
@@ -139,11 +140,12 @@ function RoleCard({ role, onSelect }) {
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 export default function RoleSelect() {
+  const navigate  = useNavigate()
   const [loading, setLoading] = useState(false)
 
   const handleSelect = (value) => {
     setLoading(true)
-    setTimeout(() => { window.location.href = `/login?role=${value}` }, 700)
+    setTimeout(() => navigate(`/login?role=${value}`), 300)
   }
 
   return (
@@ -161,10 +163,11 @@ export default function RoleSelect() {
       </div>
 
       {/* Logo link */}
-      <a href="/" className="relative flex items-center gap-2.5 mb-5 hover:opacity-80 transition-opacity">
+      <button onClick={() => navigate('/')}
+        className="relative flex items-center gap-2.5 mb-5 hover:opacity-80 transition-opacity bg-transparent border-0 p-0 cursor-pointer">
         <img src={logo} alt="Planazo" className="w-8 h-8 drop-shadow-[0_0_10px_rgba(139,92,246,0.65)]" />
         <span className="text-white font-bold text-[17px] tracking-tight">Planazo</span>
-      </a>
+      </button>
 
       {/* Heading */}
       <div className="relative text-center mb-6">
@@ -184,9 +187,10 @@ export default function RoleSelect() {
       {/* Sign in link */}
       <p className="relative text-white/32 text-[13px] mt-6">
         Already have an account?{' '}
-        <a href="/login" className="text-purple-400 hover:text-purple-300 font-medium transition-colors">
+        <button onClick={() => navigate('/login')}
+          className="text-purple-400 hover:text-purple-300 font-medium transition-colors bg-transparent border-0 p-0 cursor-pointer">
           Sign in
-        </a>
+        </button>
       </p>
 
     </div>

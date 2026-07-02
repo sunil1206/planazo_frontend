@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import logo from '../assets/logo.png'
 
 // ── Mock API (replace with real endpoints once available) ─────────────────────
@@ -175,6 +176,7 @@ function PasswordInput({ value, onChange, placeholder, show, onToggle, id }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 export default function Login() {
+  const navigate = useNavigate()
   const [flipped, setFlipped] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
@@ -219,7 +221,7 @@ export default function Login() {
     try {
       await apiLogin({ email: loginEmail, password: loginPwd })
       saveUser(loginEmail, loginUserType)
-      window.location.href = '/home'
+      navigate('/home')
     } catch (err) {
       setError(err.message)
       setLoading(false)
@@ -250,7 +252,7 @@ export default function Login() {
     try {
       await apiGoogleAuth()
       saveUser('google@planazo.com', loginUserType, 'Google User')
-      window.location.href = '/home'
+      navigate('/home')
     } catch (err) {
       setError(err.message)
       setLoading(false)
@@ -314,11 +316,11 @@ export default function Login() {
                         <span>{ROLE_CHIP[preSelectedRole].emoji}</span>
                         {ROLE_CHIP[preSelectedRole].label}
                       </span>
-                      <a href="/select-role"
-                        className="text-[12px] font-semibold opacity-65 hover:opacity-100 transition-opacity"
+                      <button onClick={() => navigate('/select-role')}
+                        className="text-[12px] font-semibold opacity-65 hover:opacity-100 transition-opacity bg-transparent border-0 p-0 cursor-pointer"
                         style={{ color: ROLE_CHIP[preSelectedRole].color }}>
                         Change
-                      </a>
+                      </button>
                     </div>
                   ) : (
                     <UserTypeSelect value={loginUserType} onChange={setLoginUserType} />
@@ -406,11 +408,11 @@ export default function Login() {
                         <span>{ROLE_CHIP[preSelectedRole].emoji}</span>
                         {ROLE_CHIP[preSelectedRole].label}
                       </span>
-                      <a href="/select-role"
-                        className="text-[12px] font-semibold opacity-65 hover:opacity-100 transition-opacity"
+                      <button onClick={() => navigate('/select-role')}
+                        className="text-[12px] font-semibold opacity-65 hover:opacity-100 transition-opacity bg-transparent border-0 p-0 cursor-pointer"
                         style={{ color: ROLE_CHIP[preSelectedRole].color }}>
                         Change
-                      </a>
+                      </button>
                     </div>
                   ) : (
                     <UserTypeSelect value={signupUserType} onChange={setSignupUserType} />

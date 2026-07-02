@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import logo from '../assets/logo.png'
 
 // ── Icon helper ───────────────────────────────────────────────────────────────
@@ -229,6 +230,7 @@ function SignOutModal({ onConfirm, onCancel }) {
 
 // ── Main Component ─────────────────────────────────────────────────────────────
 export default function Home() {
+  const navigate = useNavigate()
   const [activeNav, setActiveNav]     = useState('My Wedding')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [showSignOut, setShowSignOut] = useState(false)
@@ -241,7 +243,7 @@ export default function Home() {
 
   const confirmSignOut = () => {
     localStorage.removeItem('planazo_user')
-    window.location.href = '/'
+    navigate('/')
   }
 
   const initials = user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
