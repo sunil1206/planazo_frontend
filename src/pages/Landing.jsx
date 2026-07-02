@@ -100,7 +100,7 @@ export default function Landing() {
 
         {/* Right side */}
         <div className="flex items-center gap-3">
-          <a href="/login"
+          <a href="/select-role"
             className="px-4 py-2 rounded-xl text-[13.5px] font-semibold text-white
               bg-gradient-to-r from-purple-600 to-indigo-600
               shadow-[0_4px_16px_rgba(124,58,237,0.4)]
@@ -159,7 +159,7 @@ export default function Landing() {
 
         {/* CTAs */}
         <div className="flex flex-col sm:flex-row items-center gap-3 mb-16">
-          <a href="/login"
+          <a href="/select-role"
             className="flex items-center gap-2 px-7 py-3 rounded-xl text-[15px] font-semibold text-white
               bg-gradient-to-r from-purple-600 to-indigo-600
               shadow-[0_4px_24px_rgba(124,58,237,0.45)]
@@ -260,7 +260,7 @@ export default function Landing() {
               <p className="text-white/40 text-[14px] leading-relaxed mb-7 max-w-md">
                 Connect with India's most trusted wedding professionals. Every vendor is verified, reviewed, and ready to make your day perfect.
               </p>
-              <a href="/login"
+              <a href="/select-role"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[14px] font-semibold text-white
                   hover:-translate-y-0.5 transition-all duration-200"
                 style={{ background: 'linear-gradient(135deg, #f59e0b, #ea580c)', boxShadow: '0 4px 20px rgba(245,158,11,0.38)' }}>
@@ -336,7 +336,7 @@ export default function Landing() {
                   </li>
                 ))}
               </ul>
-              <a href="/login"
+              <a href="/select-role"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[14px] font-semibold text-white
                   hover:-translate-y-0.5 transition-all duration-200"
                 style={{ background: 'linear-gradient(135deg, #ec4899, #a855f7)', boxShadow: '0 4px 20px rgba(236,72,153,0.38)' }}>
@@ -400,7 +400,7 @@ export default function Landing() {
               <p className="text-white/45 text-[15px] mb-8">
                 All tools free, forever. Create your account and begin your wedding journey.
               </p>
-              <a href="/login"
+              <a href="/select-role"
                 className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl text-[15px] font-bold
                   hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
                 style={{
@@ -426,7 +426,7 @@ export default function Landing() {
             <span className="text-white/35 text-[13px]">© 2026 Planazo · Made with ♥ in Kerala, India</span>
           </div>
           <div className="flex items-center gap-6 text-white/30 text-[13px]">
-            <a href="/login" className="hover:text-white/70 transition-colors">Sign In</a>
+            <a href="/select-role" className="hover:text-white/70 transition-colors">Sign In</a>
             <button onClick={() => scrollTo('vendors')} className="hover:text-white/70 transition-colors">Vendors</button>
             <button onClick={() => scrollTo('gifts')}   className="hover:text-white/70 transition-colors">Gifts</button>
           </div>
