@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+html, body, #root {
+  background-color: #060412;
+}
+
 /* ── Background ─────────────────────────────────────────────────────────────── */
 
 .bg-orb {
@@ -323,8 +327,8 @@
 
 .reveal {
   opacity: 0;
-  transform: translateY(28px);
-  transition: opacity 0.65s ease, transform 0.65s ease;
+  transform: translateY(24px);
+  transition: opacity 0.72s cubic-bezier(0.22, 1, 0.36, 1), transform 0.72s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .reveal.visible {

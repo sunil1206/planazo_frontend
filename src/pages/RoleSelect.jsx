@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import logo from '../assets/logo.png'
 
 // ── Role definitions ──────────────────────────────────────────────────────────
@@ -62,26 +62,36 @@ function LoadingOverlay() {
 
 // ── 3D tilt card ──────────────────────────────────────────────────────────────
 function RoleCard({ role, onSelect }) {
-  const ref = useRef(null)
+  const ref    = useRef(null)
+  const rafRef = useRef(null)
 
-  const onMove = (e) => {
-    const el   = ref.current
-    const rect = el.getBoundingClientRect()
-    const cx   = rect.width  / 2
-    const cy   = rect.height / 2
-    const rotX = -((e.clientY - rect.top  - cy) / cy) * 10
-    const rotY =  ((e.clientX - rect.left - cx) / cx) * 10
-    el.style.transform   = `perspective(900px) rotateX(${rotX}deg) rotateY(${rotY}deg) translateZ(12px) scale(1.015)`
-    el.style.boxShadow   = `0 24px 64px ${role.glow}, 0 0 0 1px ${role.border}`
-    el.style.borderColor = role.border
-  }
+  const onMove = useCallback((e) => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    const { clientX, clientY } = e
+    rafRef.current = requestAnimationFrame(() => {
+      const el   = ref.current
+      if (!el) return
+      const rect = el.getBoundingClientRect()
+      const cx   = rect.width  / 2
+      const cy   = rect.height / 2
+      const rotX = -((clientY - rect.top  - cy) / cy) * 10
+      const rotY =  ((clientX - rect.left - cx) / cx) * 10
+      el.style.transition  = 'box-shadow 0.2s ease, border-color 0.2s ease'
+      el.style.transform   = `perspective(900px) rotateX(${rotX}deg) rotateY(${rotY}deg) translateZ(12px) scale(1.015)`
+      el.style.boxShadow   = `0 24px 64px ${role.glow}, 0 0 0 1px ${role.border}`
+      el.style.borderColor = role.border
+    })
+  }, [role])
 
-  const onLeave = () => {
+  const onLeave = useCallback(() => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current)
     const el = ref.current
+    if (!el) return
+    el.style.transition  = 'transform 0.6s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.5s ease, border-color 0.3s ease'
     el.style.transform   = 'perspective(900px) rotateX(0deg) rotateY(0deg) translateZ(0px) scale(1)'
     el.style.boxShadow   = ''
     el.style.borderColor = ''
-  }
+  }, [])
 
   return (
     <div
@@ -90,7 +100,7 @@ function RoleCard({ role, onSelect }) {
       onMouseLeave={onLeave}
       onClick={() => onSelect(role.value)}
       className="glass-card p-5 sm:p-6 flex flex-col items-center text-center gap-3.5 cursor-pointer select-none"
-      style={{ transition: 'transform 0.18s ease, box-shadow 0.2s ease, border-color 0.2s ease' }}
+      style={{ willChange: 'transform' }}
     >
       {/* Emoji icon */}
       <div className="w-[60px] h-[60px] rounded-[18px] flex items-center justify-center text-[32px]"

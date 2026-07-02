@@ -57,27 +57,37 @@ const GIFT_FEATURES = [
 
 // ── 3D tilt card ──────────────────────────────────────────────────────────────
 function TiltCard({ children, className = '', style = {}, glowColor, onClick }) {
-  const ref = useRef(null)
+  const ref  = useRef(null)
+  const rafRef = useRef(null)
 
   const onMove = (e) => {
-    const el = ref.current
-    const r  = el.getBoundingClientRect()
-    const rx = -((e.clientY - r.top  - r.height / 2) / (r.height / 2)) * 8
-    const ry =  ((e.clientX - r.left - r.width  / 2) / (r.width  / 2)) * 8
-    el.style.transform = `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg) translateZ(8px)`
-    if (glowColor) el.style.boxShadow = `0 20px 56px ${glowColor}, 0 0 0 1px rgba(255,255,255,0.07) inset`
+    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    const { clientX, clientY } = e
+    rafRef.current = requestAnimationFrame(() => {
+      const el = ref.current
+      if (!el) return
+      const r  = el.getBoundingClientRect()
+      const rx = -((clientY - r.top  - r.height / 2) / (r.height / 2)) * 7
+      const ry =  ((clientX - r.left - r.width  / 2) / (r.width  / 2)) * 7
+      el.style.transition = 'box-shadow 0.25s ease'
+      el.style.transform  = `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg) translateZ(10px)`
+      if (glowColor) el.style.boxShadow = `0 22px 60px ${glowColor}, 0 0 0 1px rgba(255,255,255,0.07) inset`
+    })
   }
 
   const onLeave = () => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current)
     const el = ref.current
-    el.style.transform = 'perspective(900px) rotateX(0deg) rotateY(0deg) translateZ(0px)'
+    if (!el) return
+    el.style.transition = 'transform 0.55s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.45s ease'
+    el.style.transform  = 'perspective(900px) rotateX(0deg) rotateY(0deg) translateZ(0px)'
     if (glowColor) el.style.boxShadow = ''
   }
 
   return (
     <div ref={ref} onMouseMove={onMove} onMouseLeave={onLeave} onClick={onClick}
       className={className}
-      style={{ ...style, transition: 'transform 0.22s ease, box-shadow 0.22s ease' }}>
+      style={{ ...style, willChange: 'transform' }}>
       {children}
     </div>
   )
@@ -293,7 +303,7 @@ export default function Landing() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {SERVICES.map((s, i) => (
-              <Reveal key={s.title} delay={i * 80}>
+              <Reveal key={s.title} delay={i * 80} className="h-full">
                 <TiltCard className="glass-card p-6 flex items-start gap-4 h-full" glowColor={s.glow}>
                   <div className="w-11 h-11 rounded-2xl shrink-0 flex items-center justify-center"
                     style={{ background: `${s.color}16`, color: s.color, border: `1px solid ${s.color}28` }}>
@@ -427,7 +437,7 @@ export default function Landing() {
                 { label: 'AI Picks',         sub: 'Smart recommendations', color: '#38bdf8', icon: Icons.bolt  },
                 { label: 'Verified Sellers', sub: '100+ curated brands',   color: '#34d399', icon: Icons.star  },
               ].map((c, i) => (
-                <Reveal key={c.label} delay={i * 70}>
+                <Reveal key={c.label} delay={i * 70} className="h-full">
                   <TiltCard className="glass-card p-5 flex flex-col gap-3 h-full" glowColor={`${c.color}30`}>
                     <div className="w-9 h-9 rounded-xl flex items-center justify-center"
                       style={{ background: `${c.color}16`, color: c.color }}>
