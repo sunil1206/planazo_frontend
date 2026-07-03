@@ -256,16 +256,16 @@ function SignOutModal({ onConfirm, onCancel }) {
       <div className="absolute inset-0 bg-black/55 backdrop-blur-sm" onClick={onCancel} />
 
       {/* Card — uses project glass-card style */}
-      <div className="relative glass-card w-full max-w-[360px] px-7 py-8 text-center"
-        style={{ animation: 'modal-card-in 0.3s cubic-bezier(0.34,1.38,0.64,1) both', borderRadius: '32px' }}>
+      <div className="relative glass-card w-full max-w-[320px] px-6 py-6 text-center"
+        style={{ animation: 'modal-card-in 0.3s cubic-bezier(0.34,1.38,0.64,1) both', borderRadius: '44px' }}>
 
         {/* Icon */}
-        <div className="w-11 h-11 rounded-full mx-auto mb-5 flex items-center justify-center"
+        <div className="w-10 h-10 rounded-full mx-auto mb-3.5 flex items-center justify-center"
           style={{
             background: 'rgba(244,63,94,0.10)',
             border: '1px solid rgba(244,63,94,0.18)',
           }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fb7185"
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fb7185"
             strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
             <path d="M16 17l5-5-5-5"/>
@@ -273,15 +273,15 @@ function SignOutModal({ onConfirm, onCancel }) {
           </svg>
         </div>
 
-        <h3 className="text-white font-bold text-[18px] tracking-tight mb-1.5">
+        <h3 className="text-white font-bold text-[17px] tracking-tight mb-1">
           Sign out?
         </h3>
-        <p className="text-white/40 text-[13px] leading-relaxed mb-7">
+        <p className="text-white/40 text-[12.5px] leading-relaxed mb-5">
           You'll be returned to the login screen.<br />Any unsaved changes will be lost.
         </p>
 
         {/* Medium side-by-side buttons */}
-        <div className="flex items-center justify-center gap-3">
+        <div className="flex items-center justify-center gap-2.5">
           <button
             onClick={onCancel}
             className="px-7 py-2.5 rounded-full text-[13.5px] font-semibold text-white/60 hover:text-white/90
