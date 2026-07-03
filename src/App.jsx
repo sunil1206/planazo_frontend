@@ -1,11 +1,14 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import Landing        from './pages/Landing'
-import RoleSelect     from './pages/RoleSelect'
-import Login          from './pages/Login'
-import Home           from './pages/Home'
-import Weddings       from './pages/Weddings'
+import Landing          from './pages/Landing'
+import RoleSelect       from './pages/RoleSelect'
+import Login            from './pages/Login'
+import Home             from './pages/Home'
+import CreateEvent      from './pages/CreateEvent'
+import Weddings         from './pages/Weddings'
+import Birthdays        from './pages/Birthdays'
+import Gallery          from './pages/Gallery'
 import InvitationEditor from './pages/InvitationEditor'
-import InvitationSite from './pages/InvitationSite'
+import InvitationSite   from './pages/InvitationSite'
 
 function App() {
   return (
@@ -15,7 +18,10 @@ function App() {
         <Route path="/select-role"         element={<RoleSelect />} />
         <Route path="/login"               element={<Login />} />
         <Route path="/home"                element={<Home />} />
+        <Route path="/create-event"        element={<CreateEvent />} />
         <Route path="/weddings"            element={<Weddings />} />
+        <Route path="/birthdays"           element={<Birthdays />} />
+        <Route path="/gallery"             element={<Gallery />} />
         <Route path="/weddings/editor/:id" element={<InvitationEditor />} />
         <Route path="/invite/:id"          element={<InvitationSite />} />
       </Routes>

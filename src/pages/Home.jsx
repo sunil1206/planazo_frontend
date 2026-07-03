@@ -81,9 +81,9 @@ const NAV_GROUPS = [
     icon: Icons.grid,
     label: 'My Events',
     children: [
-      { key: 'Weddings',  icon: Icons.ring,  label: 'Weddings',  route: '/weddings' },
-      { key: 'Birthdays', icon: Icons.cake,  label: 'Birthdays' },
-      { key: 'Gallery',   icon: Icons.image, label: 'Gallery & AI' },
+      { key: 'Weddings',  icon: Icons.ring,  label: 'Weddings',    route: '/weddings' },
+      { key: 'Birthdays', icon: Icons.cake,  label: 'Birthdays',   route: '/birthdays' },
+      { key: 'Gallery',   icon: Icons.image, label: 'Gallery & AI', route: '/gallery' },
     ],
   },
   {
@@ -469,7 +469,9 @@ export default function Home() {
                 </p>
               </div>
               <div className="shrink-0 w-full sm:w-auto">
-                <button className="flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-3 rounded-xl font-semibold text-[14px] transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                <button
+                  onClick={() => navigate('/create-event')}
+                  className="flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-3 rounded-xl font-semibold text-[14px] transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
                   style={{
                     background: 'rgba(255,255,255,0.95)',
                     color: '#4f46e5',
