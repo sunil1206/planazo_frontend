@@ -311,7 +311,7 @@ export default function Home() {
   const initials = user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
 
   const Sidebar = (
-    <aside className={`fixed top-0 left-0 h-screen w-64 z-40 flex flex-col
+    <aside className={`fixed top-0 left-0 h-screen w-64 z-40 flex flex-col overflow-hidden
       bg-white/[0.035] backdrop-blur-2xl border-r border-white/[0.07]
       transition-transform duration-300
       ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
@@ -341,7 +341,7 @@ export default function Home() {
       </div>
 
       {/* Scrollable nav */}
-      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-1 scrollbar-hide">
+      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-1 sidebar-scroll">
         {NAV_GROUPS.map(group => (
           <NavGroup
             key={group.key}
