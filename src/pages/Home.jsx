@@ -260,7 +260,7 @@ function SignOutModal({ onConfirm, onCancel }) {
         style={{ animation: 'modal-card-in 0.3s cubic-bezier(0.34,1.38,0.64,1) both' }}>
 
         {/* Icon */}
-        <div className="w-11 h-11 rounded-xl mx-auto mb-5 flex items-center justify-center"
+        <div className="w-11 h-11 rounded-full mx-auto mb-5 flex items-center justify-center"
           style={{
             background: 'rgba(244,63,94,0.10)',
             border: '1px solid rgba(244,63,94,0.18)',
