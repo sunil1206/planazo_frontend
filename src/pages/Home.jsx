@@ -81,7 +81,7 @@ const NAV_GROUPS = [
     icon: Icons.grid,
     label: 'My Events',
     children: [
-      { key: 'Weddings',  icon: Icons.ring,  label: 'Weddings' },
+      { key: 'Weddings',  icon: Icons.ring,  label: 'Weddings',  route: '/weddings' },
       { key: 'Birthdays', icon: Icons.cake,  label: 'Birthdays' },
       { key: 'Gallery',   icon: Icons.image, label: 'Gallery & AI' },
     ],
@@ -139,6 +139,7 @@ function NavItem({ icon, label, active, accent, onClick }) {
 
 // Hover-to-expand nav group with smooth max-height animation
 function NavGroup({ groupKey, icon, label, children, activeNav, setActiveNav, setSidebarOpen }) {
+  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const timerRef = useRef(null)
   const childActive = children.some(c => c.key === activeNav)
@@ -187,7 +188,11 @@ function NavGroup({ groupKey, icon, label, children, activeNav, setActiveNav, se
               icon={item.icon}
               label={item.label}
               active={activeNav === item.key}
-              onClick={() => { setActiveNav(item.key); setSidebarOpen(false) }}
+              onClick={() => {
+                setActiveNav(item.key)
+                setSidebarOpen(false)
+                if (item.route) navigate(item.route)
+              }}
             />
           ))}
         </div>
@@ -273,8 +278,8 @@ function SignOutModal({ onConfirm, onCancel }) {
           </svg>
         </div>
 
-        <h3 className="text-white font-bold text-[17px] tracking-tight mb-1">
-          Sign out?
+        <h3 className="text-white font-bold text-[20px] tracking-tight mb-1">
+          Sign out ?
         </h3>
         <p className="text-white/40 text-[12.5px] leading-relaxed mb-5">
           You'll be returned to the login screen.<br />Any unsaved changes will be lost.
