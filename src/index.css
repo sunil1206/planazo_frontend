@@ -399,3 +399,8 @@
   0%   { background-position: -200% center; }
   100% { background-position: 200%  center; }
 }
+
+@keyframes scroll-dot {
+  0%, 100% { transform: translateY(0);   opacity: 0.5; }
+  50%       { transform: translateY(8px); opacity: 1;   }
+}

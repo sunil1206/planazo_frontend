@@ -1,5 +1,14 @@
-import { useState, useRef, useEffect } from 'react'
+﻿import { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import logo from '../assets/logo.png'
+
+// ── Prevent browser autofill while keeping click-to-suggest behaviour ────────
+// Sets readOnly on mount (blocks autofill); removes it on first focus so the
+// user can type and the browser still shows a suggestion dropdown on click.
+function usePreventAutofill() {
+  const [ready, setReady] = useState(false)
+  return { readOnly: !ready, onFocus: () => setReady(true) }
+}
 
 // ── Mock API (replace with real endpoints once available) ─────────────────────
 const delay = ms => new Promise(r => setTimeout(r, ms))
@@ -20,6 +29,17 @@ async function apiGoogleAuth() {
   await delay(1500)
   return { token: 'google_mock_xyz789' }
 }
+
+// Replace with real endpoint: GET /api/users/role?email=... → { userType: 'user' | 'vendor' | 'gift_seller' }
+async function apiFetchUserRole(email) {
+  await delay(900)
+  const mockRoles = {
+    'sunilma94@gmail.com': 'user',
+    'vendor@planazo.com':  'vendor',
+    'gifts@planazo.com':   'gift_seller',
+  }
+  return mockRoles[email.toLowerCase()] ?? null
+}
 // ─────────────────────────────────────────────────────────────────────────────
 
 const USER_TYPES = [
@@ -27,6 +47,12 @@ const USER_TYPES = [
   { value: 'vendor',      label: 'Vendor',      desc: 'Offering wedding services' },
   { value: 'gift_seller', label: 'Gift Seller',  desc: 'Selling gifts & products' },
 ]
+
+const ROLE_CHIP = {
+  user:        { label: 'User Account',        emoji: '🌸', bg: 'rgba(236,72,153,0.10)',  border: 'rgba(236,72,153,0.22)', color: '#f9a8d4' },
+  vendor:      { label: 'Vendor Account',      emoji: '🏪', bg: 'rgba(168,85,247,0.10)',  border: 'rgba(168,85,247,0.22)', color: '#d8b4fe' },
+  gift_seller: { label: 'Gift Seller Account', emoji: '🎁', bg: 'rgba(20,184,166,0.10)',  border: 'rgba(20,184,166,0.22)', color: '#5eead4' },
+}
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 function EyeOpen() {
@@ -60,92 +86,17 @@ function GoogleIcon() {
   )
 }
 
-function ChevronDown() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0">
-      <path d="M6 9l6 6 6-6" />
-    </svg>
-  )
-}
-
-function CheckMark() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 shrink-0">
-      <path d="M20 6L9 17l-5-5" />
-    </svg>
-  )
-}
-
-// ── Glassmorphism dropdown ────────────────────────────────────────────────────
-function UserTypeSelect({ value, onChange }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef(null)
-
-  useEffect(() => {
-    const close = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
-    document.addEventListener('mousedown', close)
-    return () => document.removeEventListener('mousedown', close)
-  }, [])
-
-  const selected = USER_TYPES.find(t => t.value === value)
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen(p => !p)}
-        className={`glass-input w-full flex items-center justify-between gap-3 cursor-pointer select-none text-left
-          ${open ? 'border-purple-500/55 shadow-[0_0_0_3px_rgba(139,92,246,0.12)]' : ''}
-          ${selected ? 'text-white/90' : 'text-white/25'}`}
-      >
-        {selected ? (
-          <span className="flex items-center gap-2 min-w-0">
-            <span className="font-medium">{selected.label}</span>
-            <span className="text-white/25 text-[12px]">·</span>
-            <span className="text-white/38 text-[12px] truncate">{selected.desc}</span>
-          </span>
-        ) : (
-          <span>Select account type</span>
-        )}
-        <span className={`transition-transform duration-200 text-white/35 ${open ? 'rotate-180' : ''}`}>
-          <ChevronDown />
-        </span>
-      </button>
-
-      {open && (
-        <div className="glass-dropdown absolute left-0 right-0 top-[calc(100%+6px)] z-50">
-          {USER_TYPES.map((type, i) => (
-            <button
-              key={type.value}
-              type="button"
-              onClick={() => { onChange(type.value); setOpen(false) }}
-              className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors duration-150
-                ${i < USER_TYPES.length - 1 ? 'border-b border-white/[0.05]' : ''}
-                ${value === type.value
-                  ? 'bg-purple-500/[0.14] text-white'
-                  : 'text-white/60 hover:text-white hover:bg-white/[0.05]'
-                }`}
-            >
-              <div>
-                <p className="text-[13.5px] font-medium leading-tight">{type.label}</p>
-                <p className="text-[11px] mt-0.5 opacity-50">{type.desc}</p>
-              </div>
-              {value === type.value && (
-                <span className="text-purple-400 ml-3"><CheckMark /></span>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
 // ── Password input ────────────────────────────────────────────────────────────
-function PasswordInput({ value, onChange, placeholder, show, onToggle, id }) {
+function PasswordInput({ value, onChange, placeholder, show, onToggle, id, autoComplete, readOnly, onFocus }) {
   return (
     <div className="relative">
+      {/*
+        key forces React to mount a new <input> element when `show` changes.
+        Without this, some browsers (Safari, older Chrome) silently refuse to
+        change type from "password" to "text" on the same DOM node.
+      */}
       <input
+        key={`${id}-${show}`}
         id={id}
         type={show ? 'text' : 'password'}
         required
@@ -153,13 +104,19 @@ function PasswordInput({ value, onChange, placeholder, show, onToggle, id }) {
         className="glass-input pr-11"
         value={value}
         onChange={onChange}
-        autoComplete={id}
+        readOnly={readOnly}
+        onFocus={onFocus}
+        autoComplete={show ? 'off' : autoComplete}
       />
       <button
         type="button"
         onClick={onToggle}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70 transition-colors duration-200 p-1"
+        className="absolute right-2 top-1/2 -translate-y-1/2
+          flex items-center justify-center w-8 h-8 rounded-lg
+          text-white/60 hover:text-white hover:bg-white/[0.09]
+          transition-all duration-150 cursor-pointer"
         tabIndex={-1}
+        aria-label={show ? 'Hide password' : 'Show password'}
       >
         {show ? <EyeOpen /> : <EyeClosed />}
       </button>
@@ -167,8 +124,29 @@ function PasswordInput({ value, onChange, placeholder, show, onToggle, id }) {
   )
 }
 
+// ── Role chip display ─────────────────────────────────────────────────────────
+function RoleChip({ role, onNavigate }) {
+  const chip = ROLE_CHIP[role]
+  if (!chip) return null
+  return (
+    <div className="flex items-center justify-between px-3 py-2.5 rounded-xl"
+      style={{ background: chip.bg, border: `1px solid ${chip.border}` }}>
+      <span className="flex items-center gap-2 text-[13px] font-semibold" style={{ color: chip.color }}>
+        <span>{chip.emoji}</span>
+        {chip.label}
+      </span>
+      <button type="button" onClick={onNavigate}
+        className="text-[12px] font-semibold opacity-65 hover:opacity-100 transition-opacity bg-transparent border-0 p-0 cursor-pointer"
+        style={{ color: chip.color }}>
+        Change
+      </button>
+    </div>
+  )
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 export default function Login() {
+  const navigate = useNavigate()
   const [flipped, setFlipped] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
@@ -179,6 +157,9 @@ export default function Login() {
   const [loginPwd, setLoginPwd]         = useState('')
   const [showLoginPwd, setShowLoginPwd] = useState(false)
   const [loginUserType, setLoginUserType] = useState('')
+  const [roleFetching, setRoleFetching]   = useState(false)
+  const loginEmailAF   = usePreventAutofill()
+  const loginPwdAF     = usePreventAutofill()
 
   // Signup form
   const [signupEmail, setSignupEmail]       = useState('')
@@ -187,29 +168,54 @@ export default function Login() {
   const [showSignupPwd, setShowSignupPwd]   = useState(false)
   const [showConfirmPwd, setShowConfirmPwd] = useState(false)
   const [signupUserType, setSignupUserType] = useState('')
+  const signupEmailAF   = usePreventAutofill()
+  const signupPwdAF     = usePreventAutofill()
+  const signupConfirmAF = usePreventAutofill()
+
+  useEffect(() => {
+    const role = new URLSearchParams(window.location.search).get('role')
+    if (role && USER_TYPES.find(t => t.value === role)) {
+      setLoginUserType(role)
+      setSignupUserType(role)
+    }
+  }, [])
 
   const flip = (toSignup) => { setError(''); setSuccess(''); setFlipped(toSignup) }
 
   const saveUser = (email, userType, name = 'Sunil Ma') =>
     localStorage.setItem('planazo_user', JSON.stringify({ name, email, userType }))
 
-  const handleLogin = async (e) => {
-    e.preventDefault()
+  // Auto-fetch user role on email blur (login form only — existing user detection)
+  const handleEmailBlur = async () => {
+    const email = loginEmail.trim()
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return
+    if (loginUserType) return
+    setRoleFetching(true)
+    try {
+      const role = await apiFetchUserRole(email)
+      if (role) setLoginUserType(role)
+    } catch {
+      // silently ignore — user can select manually via /select-role
+    } finally {
+      setRoleFetching(false)
+    }
+  }
+
+  const handleLogin = async () => {
     setError('')
     if (!loginUserType) { setError('Please select your account type to continue'); return }
     setLoading(true)
     try {
       await apiLogin({ email: loginEmail, password: loginPwd })
       saveUser(loginEmail, loginUserType)
-      window.location.href = '/home'
+      navigate('/home')
     } catch (err) {
       setError(err.message)
       setLoading(false)
     }
   }
 
-  const handleSignup = async (e) => {
-    e.preventDefault()
+  const handleSignup = async () => {
     setError('')
     if (!signupUserType) { setError('Please select your account type to continue'); return }
     if (signupPwd !== signupConfirm) { setError('Passwords do not match'); return }
@@ -232,7 +238,7 @@ export default function Login() {
     try {
       await apiGoogleAuth()
       saveUser('google@planazo.com', loginUserType, 'Google User')
-      window.location.href = '/home'
+      navigate('/home')
     } catch (err) {
       setError(err.message)
       setLoading(false)
@@ -282,16 +288,31 @@ export default function Login() {
               {error && !flipped && <div className="alert-banner alert-error mb-3">{error}</div>}
               {success && !flipped && <div className="alert-banner alert-success mb-3">{success}</div>}
 
-              <form onSubmit={handleLogin} className="flex flex-col gap-2.5 sm:gap-3">
+              <div className="flex flex-col gap-2.5 sm:gap-3">
 
-                {/* Account type — required */}
+                {/* Account type — chip, loading state, or select-role prompt */}
                 <div className="field-group">
                   <label className="field-label">
                     Account Type <span className="text-rose-400 ml-0.5">*</span>
                   </label>
-                  <UserTypeSelect value={loginUserType} onChange={setLoginUserType} />
+                  {loginUserType ? (
+                    <RoleChip role={loginUserType} onNavigate={() => navigate('/select-role')} />
+                  ) : roleFetching ? (
+                    <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
+                      style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.18)' }}>
+                      <div className="w-3.5 h-3.5 border border-purple-400/40 border-t-purple-400 rounded-full animate-spin shrink-0" />
+                      <span className="text-[13px] text-white/45">Detecting your account type…</span>
+                    </div>
+                  ) : (
+                    <button type="button" onClick={() => navigate('/select-role')}
+                      className="glass-input w-full flex items-center justify-between text-left cursor-pointer hover:border-purple-500/40 hover:bg-white/[0.06] transition-all duration-200">
+                      <span className="text-white/30 text-[13px]">Select account type</span>
+                      <span className="text-white/30 text-[14px]">→</span>
+                    </button>
+                  )}
                 </div>
 
+                {/* Email — triggers role auto-detect on blur */}
                 <div className="field-group">
                   <label htmlFor="login-email" className="field-label">Email</label>
                   <input
@@ -302,6 +323,9 @@ export default function Login() {
                     className="glass-input"
                     value={loginEmail}
                     onChange={e => setLoginEmail(e.target.value)}
+                    onBlur={handleEmailBlur}
+                    onFocus={loginEmailAF.onFocus}
+                    readOnly={loginEmailAF.readOnly}
                     autoComplete="email"
                   />
                 </div>
@@ -320,11 +344,14 @@ export default function Login() {
                     placeholder="••••••••"
                     show={showLoginPwd}
                     onToggle={() => setShowLoginPwd(p => !p)}
+                    autoComplete="current-password"
+                    readOnly={loginPwdAF.readOnly}
+                    onFocus={loginPwdAF.onFocus}
                   />
                 </div>
 
-                <button type="submit" className="btn-primary mt-1">Sign In</button>
-              </form>
+                <button type="button" onClick={handleLogin} className="btn-primary mt-1">Sign In</button>
+              </div>
 
               <div className="flex items-center my-2.5 gap-3">
                 <div className="flex-1 h-px bg-white/8" />
@@ -359,14 +386,22 @@ export default function Login() {
 
               {error && flipped && <div className="alert-banner alert-error mb-3">{error}</div>}
 
-              <form onSubmit={handleSignup} className="flex flex-col gap-2.5 sm:gap-3">
+              <div className="flex flex-col gap-2.5 sm:gap-3">
 
-                {/* Account type — required */}
+                {/* Account type — chip or select-role prompt (new users pick their own role) */}
                 <div className="field-group">
                   <label className="field-label">
                     Account Type <span className="text-rose-400 ml-0.5">*</span>
                   </label>
-                  <UserTypeSelect value={signupUserType} onChange={setSignupUserType} />
+                  {signupUserType ? (
+                    <RoleChip role={signupUserType} onNavigate={() => navigate('/select-role')} />
+                  ) : (
+                    <button type="button" onClick={() => navigate('/select-role')}
+                      className="glass-input w-full flex items-center justify-between text-left cursor-pointer hover:border-purple-500/40 hover:bg-white/[0.06] transition-all duration-200">
+                      <span className="text-white/30 text-[13px]">Select account type</span>
+                      <span className="text-white/30 text-[14px]">→</span>
+                    </button>
+                  )}
                 </div>
 
                 <div className="field-group">
@@ -379,6 +414,8 @@ export default function Login() {
                     className="glass-input"
                     value={signupEmail}
                     onChange={e => setSignupEmail(e.target.value)}
+                    onFocus={signupEmailAF.onFocus}
+                    readOnly={signupEmailAF.readOnly}
                     autoComplete="email"
                   />
                 </div>
@@ -392,6 +429,9 @@ export default function Login() {
                     placeholder="min. 8 characters"
                     show={showSignupPwd}
                     onToggle={() => setShowSignupPwd(p => !p)}
+                    autoComplete="new-password"
+                    readOnly={signupPwdAF.readOnly}
+                    onFocus={signupPwdAF.onFocus}
                   />
                 </div>
 
@@ -404,11 +444,14 @@ export default function Login() {
                     placeholder="••••••••"
                     show={showConfirmPwd}
                     onToggle={() => setShowConfirmPwd(p => !p)}
+                    autoComplete="new-password"
+                    readOnly={signupConfirmAF.readOnly}
+                    onFocus={signupConfirmAF.onFocus}
                   />
                 </div>
 
-                <button type="submit" className="btn-primary mt-1">Create Account</button>
-              </form>
+                <button type="button" onClick={handleSignup} className="btn-primary mt-1">Create Account</button>
+              </div>
 
               <p className="text-center text-white/35 text-[12px] mt-2.5 sm:mt-4">
                 Already have an account?{' '}

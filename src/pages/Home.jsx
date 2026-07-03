@@ -327,7 +327,7 @@ export default function Home() {
 
   const confirmSignOut = () => {
     localStorage.removeItem('planazo_user')
-    window.location.href = '/'
+    navigate('/login')
   }
 
   const initials = user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
