@@ -151,7 +151,13 @@ function UserTypeSelect({ value, onChange }) {
 function PasswordInput({ value, onChange, placeholder, show, onToggle, id }) {
   return (
     <div className="relative">
+      {/*
+        key forces React to mount a new <input> element when `show` changes.
+        Without this, some browsers (Safari, older Chrome) silently refuse to
+        change type from "password" to "text" on the same DOM node.
+      */}
       <input
+        key={`${id}-${show}`}
         id={id}
         type={show ? 'text' : 'password'}
         required
@@ -159,13 +165,17 @@ function PasswordInput({ value, onChange, placeholder, show, onToggle, id }) {
         className="glass-input pr-11"
         value={value}
         onChange={onChange}
-        autoComplete={id}
+        autoComplete={show ? 'off' : id}
       />
       <button
         type="button"
         onClick={onToggle}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70 transition-colors duration-200 p-1"
+        className="absolute right-2 top-1/2 -translate-y-1/2
+          flex items-center justify-center w-8 h-8 rounded-lg
+          text-white/60 hover:text-white hover:bg-white/[0.09]
+          transition-all duration-150 cursor-pointer"
         tabIndex={-1}
+        aria-label={show ? 'Hide password' : 'Show password'}
       >
         {show ? <EyeOpen /> : <EyeClosed />}
       </button>
