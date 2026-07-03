@@ -250,70 +250,56 @@ function InvitationCard({ couple, status, theme, engagements, initials }) {
 function SignOutModal({ onConfirm, onCancel }) {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-      style={{ animation: 'modal-bg-in 0.25s ease both' }}>
+      style={{ animation: 'modal-bg-in 0.22s ease both' }}>
 
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/75 backdrop-blur-lg" onClick={onCancel} />
+      <div className="absolute inset-0 bg-black/55 backdrop-blur-sm" onClick={onCancel} />
 
-      {/* Card */}
-      <div className="relative w-full max-w-[340px] flex flex-col items-center text-center overflow-hidden"
-        style={{
-          animation: 'modal-card-in 0.38s cubic-bezier(0.34,1.46,0.64,1) both',
-          background: 'rgba(12, 8, 24, 0.94)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: '28px',
-          boxShadow: '0 40px 80px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,0.03) inset',
-          backdropFilter: 'blur(40px)',
-        }}>
+      {/* Card — uses project glass-card style */}
+      <div className="relative glass-card w-full max-w-[360px] px-7 py-8 text-center"
+        style={{ animation: 'modal-card-in 0.3s cubic-bezier(0.34,1.38,0.64,1) both' }}>
 
-        {/* Rose radial glow behind icon */}
-        <div className="absolute top-0 inset-x-0 h-40 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 0%, rgba(244,63,94,0.22) 0%, transparent 100%)' }} />
+        {/* Icon */}
+        <div className="w-11 h-11 rounded-xl mx-auto mb-5 flex items-center justify-center"
+          style={{
+            background: 'rgba(244,63,94,0.10)',
+            border: '1px solid rgba(244,63,94,0.18)',
+          }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fb7185"
+            strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <path d="M16 17l5-5-5-5"/>
+            <path d="M21 12H9"/>
+          </svg>
+        </div>
 
-        <div className="relative w-full px-8 pt-10 pb-8 flex flex-col items-center">
+        <h3 className="text-white font-bold text-[18px] tracking-tight mb-1.5">
+          Sign out?
+        </h3>
+        <p className="text-white/40 text-[13px] leading-relaxed mb-7">
+          You'll be returned to the login screen.<br />Any unsaved changes will be lost.
+        </p>
 
-          {/* Icon ring */}
-          <div className="relative mb-6">
-            <div className="w-[72px] h-[72px] rounded-full flex items-center justify-center"
-              style={{
-                background: 'linear-gradient(145deg, rgba(244,63,94,0.18), rgba(159,18,57,0.12))',
-                border: '1px solid rgba(244,63,94,0.22)',
-                boxShadow: '0 0 0 8px rgba(244,63,94,0.06), 0 12px 32px rgba(244,63,94,0.22)',
-              }}>
-              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fb7185"
-                strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                <path d="M16 17l5-5-5-5"/>
-                <path d="M21 12H9"/>
-              </svg>
-            </div>
-          </div>
-
-          <h3 className="text-white font-bold text-[22px] tracking-tight mb-2.5">
-            Sign out?
-          </h3>
-          <p className="text-white/38 text-[13.5px] leading-[1.6] mb-8">
-            You'll be returned to the login screen.<br />Any unsaved changes will be lost.
-          </p>
-
-          {/* Primary: Sign Out */}
+        {/* Medium side-by-side buttons */}
+        <div className="flex items-center justify-center gap-3">
+          <button
+            onClick={onCancel}
+            className="px-7 py-2.5 rounded-xl text-[13.5px] font-semibold text-white/60 hover:text-white/90
+              bg-white/[0.055] hover:bg-white/[0.09] border border-white/[0.09] hover:border-white/[0.16]
+              transition-all duration-200"
+          >
+            Cancel
+          </button>
           <button
             onClick={onConfirm}
-            className="w-full py-3.5 rounded-2xl text-[15px] font-bold text-white mb-3 transition-all duration-200 hover:-translate-y-px hover:shadow-[0_12px_32px_rgba(244,63,94,0.45)] active:translate-y-0 active:scale-[0.98]"
+            className="px-7 py-2.5 rounded-xl text-[13.5px] font-semibold text-white
+              hover:-translate-y-px active:translate-y-0 transition-all duration-200"
             style={{
-              background: 'linear-gradient(135deg, #f43f5e 0%, #e11d48 60%, #be123c 100%)',
-              boxShadow: '0 6px 24px rgba(244,63,94,0.38)',
+              background: 'linear-gradient(135deg, #f43f5e, #e11d48)',
+              boxShadow: '0 4px 18px rgba(244,63,94,0.32)',
             }}
           >
             Sign Out
-          </button>
-
-          {/* Secondary: Cancel */}
-          <button
-            onClick={onCancel}
-            className="w-full py-3 rounded-2xl text-[14px] font-medium text-white/40 hover:text-white/70 transition-colors duration-200"
-          >
-            Cancel
           </button>
         </div>
       </div>
