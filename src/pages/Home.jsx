@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import logo from '../assets/logo.png'
 
 // ── Icon helper ───────────────────────────────────────────────────────────────
@@ -36,6 +37,7 @@ const Icons = {
   close:    <Ico><path d="M18 6L6 18M6 6l12 12"/></Ico>,
   star:     <Ico><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></Ico>,
   ring:     <Ico><path d="M6 9a6 6 0 1 0 12 0A6 6 0 0 0 6 9"/><path d="M12 15v7"/><path d="M9 18l3 4 3-4"/></Ico>,
+  chevron:  <Ico size={14}><path d="M6 9l6 6 6-6"/></Ico>,
 }
 
 // ── User type display ─────────────────────────────────────────────────────────
@@ -73,33 +75,35 @@ const INVITATIONS = [
   },
 ]
 
-const NAV_SECTIONS = [
+const NAV_GROUPS = [
   {
-    label: null,
-    items: [{ key: 'My Wedding', icon: Icons.grid, label: 'My Wedding' }],
-  },
-  {
-    label: 'MY EVENTS',
-    items: [
-      { key: 'Weddings',   icon: Icons.ring,  label: '+ Weddings' },
-      { key: 'Birthdays',  icon: Icons.cake,  label: 'Birthdays' },
-      { key: 'Gallery',    icon: Icons.image, label: 'Gallery & AI' },
+    key: 'MyEvents',
+    icon: Icons.grid,
+    label: 'My Events',
+    children: [
+      { key: 'Weddings',  icon: Icons.ring,  label: 'Weddings' },
+      { key: 'Birthdays', icon: Icons.cake,  label: 'Birthdays' },
+      { key: 'Gallery',   icon: Icons.image, label: 'Gallery & AI' },
     ],
   },
   {
-    label: 'PLANNING SUITE',
-    items: [
-      { key: 'Checklist',    icon: Icons.check,   label: 'Checklist' },
-      { key: 'Budget',       icon: Icons.dollar,  label: 'Budget' },
-      { key: 'GuestList',    icon: Icons.users,   label: 'Guest List' },
-      { key: 'MyVendors',    icon: Icons.store,   label: 'My Vendors' },
-      { key: 'FindVendors',  icon: Icons.search,  label: 'Find Vendors' },
-      { key: 'AIPlanner',    icon: Icons.robot,   label: 'AI Planner' },
+    key: 'PlanningSuite',
+    icon: Icons.check,
+    label: 'Planning Suite',
+    children: [
+      { key: 'Checklist',   icon: Icons.check,  label: 'Checklist' },
+      { key: 'Budget',      icon: Icons.dollar, label: 'Budget' },
+      { key: 'GuestList',   icon: Icons.users,  label: 'Guest List' },
+      { key: 'MyVendors',   icon: Icons.store,  label: 'My Vendors' },
+      { key: 'FindVendors', icon: Icons.search, label: 'Find Vendors' },
+      { key: 'AIPlanner',   icon: Icons.robot,  label: 'AI Planner' },
     ],
   },
   {
-    label: 'GIFTS & SHOP',
-    items: [
+    key: 'GiftsShop',
+    icon: Icons.gift,
+    label: 'Gifts & Shop',
+    children: [
       { key: 'ScheduleGifts', icon: Icons.gift, label: 'Schedule Gifts' },
       { key: 'GiftShop',      icon: Icons.bag,  label: 'Gift Shop' },
     ],
@@ -130,6 +134,65 @@ function NavItem({ icon, label, active, accent, onClick }) {
       <span className={`shrink-0 ${active ? 'text-white' : ''}`}>{icon}</span>
       {label}
     </button>
+  )
+}
+
+// Hover-to-expand nav group with smooth max-height animation
+function NavGroup({ groupKey, icon, label, children, activeNav, setActiveNav, setSidebarOpen }) {
+  const [open, setOpen] = useState(false)
+  const timerRef = useRef(null)
+  const childActive = children.some(c => c.key === activeNav)
+  const isGroupActive = activeNav === groupKey || childActive
+
+  const expand = () => {
+    clearTimeout(timerRef.current)
+    setOpen(true)
+  }
+  const collapse = () => {
+    timerRef.current = setTimeout(() => setOpen(false), 120)
+  }
+
+  return (
+    <div onMouseEnter={expand} onMouseLeave={collapse}>
+      {/* Group header */}
+      <button
+        onClick={() => { setOpen(o => !o); setActiveNav(groupKey) }}
+        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13.5px] font-medium transition-all duration-200 text-left
+          ${isGroupActive
+            ? 'bg-gradient-to-r from-purple-600/70 to-indigo-600/60 text-white shadow-[0_0_16px_rgba(124,58,237,0.25)]'
+            : 'text-white/50 hover:text-white/85 hover:bg-white/[0.06]'
+          }`}
+      >
+        <span className="shrink-0">{icon}</span>
+        <span className="flex-1 text-left">{label}</span>
+        <span className={`shrink-0 text-white/35 transition-transform duration-300 ${open ? 'rotate-180' : ''}`}>
+          {Icons.chevron}
+        </span>
+      </button>
+
+      {/* Sub-items with smooth expand */}
+      <div
+        style={{
+          maxHeight: open ? `${children.length * 52}px` : '0px',
+          opacity: open ? 1 : 0,
+          overflow: 'hidden',
+          transition: 'max-height 0.32s cubic-bezier(0.4,0,0.2,1), opacity 0.22s ease',
+        }}
+      >
+        <div className="ml-3 mt-1 mb-1 pl-3 space-y-0.5"
+          style={{ borderLeft: '1px solid rgba(255,255,255,0.07)' }}>
+          {children.map(item => (
+            <NavItem
+              key={item.key}
+              icon={item.icon}
+              label={item.label}
+              active={activeNav === item.key}
+              onClick={() => { setActiveNav(item.key); setSidebarOpen(false) }}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -229,7 +292,8 @@ function SignOutModal({ onConfirm, onCancel }) {
 
 // ── Main Component ─────────────────────────────────────────────────────────────
 export default function Home() {
-  const [activeNav, setActiveNav]     = useState('My Wedding')
+  const navigate = useNavigate()
+  const [activeNav, setActiveNav]     = useState('MyEvents')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [showSignOut, setShowSignOut] = useState(false)
   const [user, setUser]               = useState({ name: 'Sunil Ma', email: 'sunilma94@gmail.com' })
@@ -277,24 +341,18 @@ export default function Home() {
       </div>
 
       {/* Scrollable nav */}
-      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5 scrollbar-hide">
-        {NAV_SECTIONS.map((section, si) => (
-          <div key={si} className={si > 0 ? 'mt-4' : ''}>
-            {section.label && (
-              <p className="px-3 mb-1.5 text-[10px] font-semibold tracking-[0.12em] text-white/25 uppercase">
-                {section.label}
-              </p>
-            )}
-            {section.items.map(item => (
-              <NavItem
-                key={item.key}
-                icon={item.icon}
-                label={item.label}
-                active={activeNav === item.key}
-                onClick={() => { setActiveNav(item.key); setSidebarOpen(false) }}
-              />
-            ))}
-          </div>
+      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-1 scrollbar-hide">
+        {NAV_GROUPS.map(group => (
+          <NavGroup
+            key={group.key}
+            groupKey={group.key}
+            icon={group.icon}
+            label={group.label}
+            children={group.children}
+            activeNav={activeNav}
+            setActiveNav={setActiveNav}
+            setSidebarOpen={setSidebarOpen}
+          />
         ))}
       </nav>
 
@@ -382,10 +440,10 @@ export default function Home() {
                   WELCOME BACK TO PLANAZO
                 </p>
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2 sm:mb-3 leading-tight">
-                  Your Wedding Space
+                  Your Event Space
                 </h1>
                 <p className="text-white/55 text-[13px] sm:text-[14px] leading-relaxed max-w-md">
-                  Create magic for your special day. Manage your digital experiences and track guest engagement in real-time.
+                  Create magic for every special moment. Manage your digital experiences and track guest engagement in real-time.
                 </p>
               </div>
               <div className="shrink-0 w-full sm:w-auto">
