@@ -1,4 +1,5 @@
 ﻿import { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import logo from '../assets/logo.png'
 
 // ── Icon helper ───────────────────────────────────────────────────────────────
@@ -131,6 +132,7 @@ function LoadingOverlay() {
 
 // ── Landing page ──────────────────────────────────────────────────────────────
 export default function Landing() {
+  const navigate  = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const [loading,  setLoading]  = useState(false)
 
@@ -141,7 +143,7 @@ export default function Landing() {
 
   const goTo = (href) => {
     setLoading(true)
-    setTimeout(() => { window.location.href = href }, 650)
+    setTimeout(() => navigate(href), 650)
   }
 
   return (
