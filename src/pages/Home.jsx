@@ -257,7 +257,7 @@ function SignOutModal({ onConfirm, onCancel }) {
 
       {/* Card — uses project glass-card style */}
       <div className="relative glass-card w-full max-w-[360px] px-7 py-8 text-center"
-        style={{ animation: 'modal-card-in 0.3s cubic-bezier(0.34,1.38,0.64,1) both' }}>
+        style={{ animation: 'modal-card-in 0.3s cubic-bezier(0.34,1.38,0.64,1) both', borderRadius: '32px' }}>
 
         {/* Icon */}
         <div className="w-11 h-11 rounded-full mx-auto mb-5 flex items-center justify-center"
@@ -284,7 +284,7 @@ function SignOutModal({ onConfirm, onCancel }) {
         <div className="flex items-center justify-center gap-3">
           <button
             onClick={onCancel}
-            className="px-7 py-2.5 rounded-xl text-[13.5px] font-semibold text-white/60 hover:text-white/90
+            className="px-7 py-2.5 rounded-full text-[13.5px] font-semibold text-white/60 hover:text-white/90
               bg-white/[0.055] hover:bg-white/[0.09] border border-white/[0.09] hover:border-white/[0.16]
               transition-all duration-200"
           >
@@ -292,7 +292,7 @@ function SignOutModal({ onConfirm, onCancel }) {
           </button>
           <button
             onClick={onConfirm}
-            className="px-7 py-2.5 rounded-xl text-[13.5px] font-semibold text-white
+            className="px-7 py-2.5 rounded-full text-[13.5px] font-semibold text-white
               hover:-translate-y-px active:translate-y-0 transition-all duration-200"
             style={{
               background: 'linear-gradient(135deg, #f43f5e, #e11d48)',
