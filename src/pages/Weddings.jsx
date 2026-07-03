@@ -3,15 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import logo from '../assets/logo.png'
 
 // ── Mock API ──────────────────────────────────────────────────────────────────
-const delay = ms => new Promise(r => setTimeout(r, ms))
-
-async function apiGetInvitations() {
-  await delay(500)
+function apiGetInvitations() {
   return JSON.parse(localStorage.getItem('planazo_invitations') || '[]')
 }
 
-async function apiCreateInvitation(data) {
-  await delay(900)
+function apiCreateInvitation(data) {
   const list = JSON.parse(localStorage.getItem('planazo_invitations') || '[]')
   const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
   const inv = {
@@ -45,8 +41,7 @@ async function apiCreateInvitation(data) {
   return inv
 }
 
-async function apiDeleteInvitation(id) {
-  await delay(400)
+function apiDeleteInvitation(id) {
   const list = JSON.parse(localStorage.getItem('planazo_invitations') || '[]')
   localStorage.setItem('planazo_invitations', JSON.stringify(list.filter(i => i.id !== id)))
 }
@@ -70,51 +65,31 @@ const themeMap = Object.fromEntries(THEMES.map(t => [t.id, t]))
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function Weddings() {
   const navigate = useNavigate()
-  const [invitations, setInvitations] = useState([])
-  const [loading, setLoading]         = useState(true)
+  const [invitations, setInvitations] = useState(() => apiGetInvitations())
   const [showCreate, setShowCreate]   = useState(false)
-  const [creating, setCreating]       = useState(false)
   const [deleting, setDeleting]       = useState(null)
   const [form, setForm] = useState({ coupleName: '', groomName: '', brideName: '', theme: 'cinematic_dark' })
   const [formErr, setFormErr] = useState('')
 
-  useEffect(() => {
-    apiGetInvitations().then(data => { setInvitations(data); setLoading(false) })
-  }, [])
-
-  const handleCreate = async () => {
+  const handleCreate = () => {
     if (!form.coupleName.trim()) { setFormErr('Couple name is required'); return }
     setFormErr('')
-    setCreating(true)
     setShowCreate(false)
-    const inv = await apiCreateInvitation(form)
+    const inv = apiCreateInvitation(form)
     setInvitations(prev => [...prev, inv])
-    setCreating(false)
     setForm({ coupleName: '', groomName: '', brideName: '', theme: 'cinematic_dark' })
     navigate(`/weddings/editor/${inv.id}`)
   }
 
-  const handleDelete = async (id) => {
+  const handleDelete = (id) => {
     setDeleting(id)
-    await apiDeleteInvitation(id)
+    apiDeleteInvitation(id)
     setInvitations(prev => prev.filter(i => i.id !== id))
     setDeleting(null)
   }
 
   return (
     <div className="min-h-screen bg-[#060412] text-white">
-
-      {/* Creating overlay */}
-      {creating && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 backdrop-blur-md">
-          <div className="relative flex items-center justify-center">
-            <div className="loading-ring-outer" />
-            <div className="loading-ring-inner" />
-            <img src={logo} alt="" className="w-[72px] h-[72px] relative z-10 logo-pulse" />
-          </div>
-          <p className="absolute mt-36 text-white/50 text-[13px]">Creating your invitation…</p>
-        </div>
-      )}
 
       {/* Ambient background */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
@@ -154,11 +129,7 @@ export default function Weddings() {
 
       {/* Content */}
       <main className="relative max-w-6xl mx-auto px-5 py-8">
-        {loading ? (
-          <div className="flex items-center justify-center py-32">
-            <div className="w-7 h-7 rounded-full border border-purple-500/40 border-t-purple-500 animate-spin" />
-          </div>
-        ) : invitations.length === 0 ? (
+        {invitations.length === 0 ? (
           /* Empty state */
           <div className="flex flex-col items-center justify-center py-28 text-center">
             <div className="w-20 h-20 rounded-full flex items-center justify-center mb-5 text-[32px]"
@@ -185,22 +156,62 @@ export default function Weddings() {
               return (
                 <div key={inv.id} className="glass-card overflow-hidden group hover:border-white/20 transition-all duration-300 hover:-translate-y-1">
                   {/* Cover area */}
-                  <div className="relative h-44 flex flex-col items-center justify-center gap-1 overflow-hidden" style={{ background: t.bg }}>
-                    {/* Decorative circles */}
-                    <div className="absolute w-48 h-48 rounded-full border border-white/[0.06] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-100 group-hover:scale-110 transition-transform duration-700" />
-                    <div className="absolute w-32 h-32 rounded-full border border-white/[0.08] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-                    <span className="text-4xl relative">{t.emoji}</span>
-                    <p className="text-white/60 text-[11px] tracking-[0.2em] uppercase relative">{t.name}</p>
-                    {/* Status badge */}
-                    <div className="absolute top-3 right-3">
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider
-                        ${inv.status === 'live'
-                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                          : 'bg-amber-500/18 text-amber-400 border border-amber-500/25'}`}>
-                        {inv.status === 'live' ? '● LIVE' : '○ DRAFT'}
-                      </span>
-                    </div>
-                  </div>
+                  {(() => {
+                    const photoFilters = {
+                      royal_mughal:       'sepia(0.5) contrast(1.1) brightness(0.75)',
+                      kerala_traditional: 'saturate(0.8) sepia(0.25) contrast(1.05) brightness(0.75)',
+                      modern_minimal:     'grayscale(0.4) contrast(1.2) brightness(0.75)',
+                      floral_pastel:      'saturate(1.1) hue-rotate(330deg) brightness(0.75)',
+                      cinematic_dark:     'grayscale(0.6) contrast(1.3) brightness(0.65)',
+                    }
+                    const pf = photoFilters[inv.theme] || photoFilters.cinematic_dark
+                    const coverPhoto = localStorage.getItem(`planazo_photo_${inv.id}_coverPhoto`) || null
+                    const groomPhoto = localStorage.getItem(`planazo_photo_${inv.id}_groomPhoto`) || null
+                    const bridePhoto = localStorage.getItem(`planazo_photo_${inv.id}_bridePhoto`) || null
+                    const hasPhotos = groomPhoto || bridePhoto || coverPhoto
+                    return (
+                      <div className="relative h-44 flex flex-col items-center justify-center gap-1 overflow-hidden" style={{ background: t.bg }}>
+                        {/* Photos if available */}
+                        {hasPhotos && (
+                          <>
+                            {coverPhoto ? (
+                              <img src={coverPhoto} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ filter: pf }} />
+                            ) : (
+                              <>
+                                {groomPhoto && <img src={groomPhoto} alt="" className="absolute left-0 top-0 w-1/2 h-full object-cover" style={{ filter: pf }} />}
+                                {bridePhoto && <img src={bridePhoto} alt="" className="absolute right-0 top-0 w-1/2 h-full object-cover" style={{ filter: pf }} />}
+                                {groomPhoto && bridePhoto && (
+                                  <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, transparent 35%, rgba(0,0,0,0.55) 50%, transparent 65%)' }} />
+                                )}
+                              </>
+                            )}
+                            {/* Cinematic overlay */}
+                            <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, rgba(0,0,0,0.18) 0%, transparent 40%, rgba(0,0,0,0.72) 100%)` }} />
+                            {/* Vignette */}
+                            <div className="absolute inset-0" style={{ boxShadow: '0 0 60px rgba(0,0,0,0.7) inset' }} />
+                          </>
+                        )}
+                        {/* Decorative circles (shown when no photos) */}
+                        {!hasPhotos && (
+                          <>
+                            <div className="absolute w-48 h-48 rounded-full border border-white/[0.06] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-100 group-hover:scale-110 transition-transform duration-700" />
+                            <div className="absolute w-32 h-32 rounded-full border border-white/[0.08] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                          </>
+                        )}
+                        <span className="text-4xl relative z-10">{t.emoji}</span>
+                        <p className="text-white/70 text-[11px] tracking-[0.2em] uppercase relative z-10" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.8)' }}>{t.name}</p>
+                        {/* Status badge */}
+                        <div className="absolute top-3 right-3 z-10">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider
+                            ${inv.status === 'live'
+                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                              : 'bg-amber-500/18 text-amber-400 border border-amber-500/25'}`}>
+                            {inv.status === 'live' ? '● LIVE' : '○ DRAFT'}
+                          </span>
+                        </div>
+                      </div>
+                    )
+                  })()}
 
                   {/* Info */}
                   <div className="p-4">
@@ -313,32 +324,31 @@ export default function Weddings() {
               {/* Theme picker */}
               <div className="field-group">
                 <label className="field-label">Choose a Theme <span className="text-rose-400 normal-case font-normal">*</span></label>
-                <div className="space-y-2 mt-1">
+                <div className="grid grid-cols-2 gap-2 mt-1">
                   {THEMES.map(theme => (
                     <button
                       key={theme.id}
                       type="button"
                       onClick={() => setForm(f => ({ ...f, theme: theme.id }))}
-                      className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl border transition-all duration-150 text-left
+                      className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-all duration-150 text-left
                         ${form.theme === theme.id
                           ? 'bg-purple-500/12 border-purple-500/45'
                           : 'bg-white/[0.03] border-white/[0.07] hover:bg-white/[0.055] hover:border-white/[0.12]'
                         }`}
                     >
-                      {/* Mini theme color swatch */}
-                      <div className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center text-base"
+                      <div className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center text-sm"
                         style={{ background: theme.bg }}>
                         {theme.emoji}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className={`text-[13px] font-semibold leading-tight ${form.theme === theme.id ? 'text-white' : 'text-white/75'}`}>
+                        <p className={`text-[12px] font-semibold truncate leading-tight ${form.theme === theme.id ? 'text-white' : 'text-white/70'}`}>
                           {theme.name}
                         </p>
-                        <p className="text-[11px] text-white/32 truncate">{theme.desc}</p>
+                        <p className="text-[10px] text-white/28 truncate">{theme.desc}</p>
                       </div>
                       {form.theme === theme.id && (
                         <span className="text-purple-400 shrink-0">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M20 6L9 17l-5-5"/>
                           </svg>
                         </span>

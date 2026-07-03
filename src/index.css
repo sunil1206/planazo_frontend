@@ -357,14 +357,14 @@
 
 .phone-frame {
   position: relative;
-  width: 248px;
-  height: 520px;
-  border-radius: 38px;
-  border: 8px solid #1a1a2e;
+  width: 210px;
+  height: 440px;
+  border-radius: 32px;
+  border: 6px solid #1a1a2e;
   background: #0a0a0a;
   box-shadow:
     0 0 0 1px rgba(255,255,255,0.06),
-    0 30px 80px rgba(0,0,0,0.7),
+    0 24px 64px rgba(0,0,0,0.7),
     inset 0 0 0 1px rgba(255,255,255,0.04);
   overflow: hidden;
 }
@@ -374,10 +374,10 @@
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 72px;
-  height: 18px;
+  width: 60px;
+  height: 15px;
   background: #1a1a2e;
-  border-radius: 0 0 16px 16px;
+  border-radius: 0 0 12px 12px;
   z-index: 10;
 }
 
@@ -390,6 +390,13 @@
 }
 
 .phone-screen::-webkit-scrollbar { display: none; }
+
+/* ── Tab panel transition ────────────────────────────────────────────────────── */
+
+@keyframes tab-enter {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
 /* ── Invitation site animations ──────────────────────────────────────────────── */
 

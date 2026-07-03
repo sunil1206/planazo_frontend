@@ -78,11 +78,11 @@ function EventCard({ type, onClick }) {
       onMouseMove={onMove}
       onMouseLeave={onLeave}
       onClick={onClick}
-      className="glass-card p-6 sm:p-7 flex flex-col items-center text-center gap-4 cursor-pointer select-none"
+      className="glass-card p-4 sm:p-5 flex flex-col items-center text-center gap-3 cursor-pointer select-none"
       style={{ willChange: 'transform' }}
     >
       {/* Icon */}
-      <div className="w-[68px] h-[68px] rounded-[22px] flex items-center justify-center text-[36px]"
+      <div className="w-[54px] h-[54px] rounded-[18px] flex items-center justify-center text-[28px]"
         style={{
           background: type.grad,
           boxShadow: `0 8px 28px ${type.glow}`,
@@ -93,8 +93,8 @@ function EventCard({ type, onClick }) {
 
       {/* Text */}
       <div style={{ transform: 'translateZ(10px)' }}>
-        <h3 className="text-white font-bold text-[20px] mb-2">{type.label}</h3>
-        <p className="text-white/45 text-[13px] leading-relaxed">{type.desc}</p>
+        <h3 className="text-white font-bold text-[17px] mb-1.5">{type.label}</h3>
+        <p className="text-white/45 text-[12.5px] leading-relaxed">{type.desc}</p>
       </div>
 
       {/* Tags */}
@@ -108,7 +108,7 @@ function EventCard({ type, onClick }) {
       </div>
 
       {/* CTA */}
-      <p className="text-[13.5px] font-semibold mt-1" style={{ color: type.accent, transform: 'translateZ(8px)' }}>
+      <p className="text-[12.5px] font-semibold" style={{ color: type.accent, transform: 'translateZ(8px)' }}>
         Get started →
       </p>
     </div>
@@ -119,7 +119,7 @@ export default function CreateEvent() {
   const navigate = useNavigate()
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#060412] flex flex-col items-center justify-center px-5 py-12">
+    <div className="relative h-screen overflow-hidden bg-[#060412] flex flex-col items-center justify-center px-5">
 
       {/* Background */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
