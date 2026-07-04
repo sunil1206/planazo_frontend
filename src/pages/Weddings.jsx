@@ -44,6 +44,18 @@ function apiCreateInvitation(data) {
 function apiDeleteInvitation(id) {
   const list = JSON.parse(localStorage.getItem('planazo_invitations') || '[]')
   localStorage.setItem('planazo_invitations', JSON.stringify(list.filter(i => i.id !== id)))
+  ;['coverPhoto', 'groomPhoto', 'bridePhoto'].forEach(k =>
+    localStorage.removeItem(`planazo_photo_${id}_${k}`)
+  )
+}
+
+function apiPublishInvitation(id) {
+  const list = JSON.parse(localStorage.getItem('planazo_invitations') || '[]')
+  const idx = list.findIndex(i => i.id === id)
+  if (idx < 0) return null
+  list[idx] = { ...list[idx], status: 'live' }
+  localStorage.setItem('planazo_invitations', JSON.stringify(list))
+  return list[idx]
 }
 
 // ── Theme config ──────────────────────────────────────────────────────────────
@@ -66,8 +78,9 @@ const themeMap = Object.fromEntries(THEMES.map(t => [t.id, t]))
 export default function Weddings() {
   const navigate = useNavigate()
   const [invitations, setInvitations] = useState(() => apiGetInvitations())
-  const [showCreate, setShowCreate]   = useState(false)
-  const [deleting, setDeleting]       = useState(null)
+  const [showCreate, setShowCreate]     = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(null)
+  const [copied, setCopied]             = useState(null)
   const [form, setForm] = useState({ coupleName: '', groomName: '', brideName: '', theme: 'cinematic_dark' })
   const [formErr, setFormErr] = useState('')
 
@@ -82,10 +95,20 @@ export default function Weddings() {
   }
 
   const handleDelete = (id) => {
-    setDeleting(id)
     apiDeleteInvitation(id)
     setInvitations(prev => prev.filter(i => i.id !== id))
-    setDeleting(null)
+    setConfirmDelete(null)
+  }
+
+  const handlePublish = (id) => {
+    const updated = apiPublishInvitation(id)
+    if (updated) setInvitations(prev => prev.map(i => i.id === id ? { ...i, status: 'live' } : i))
+  }
+
+  const handleCopy = (code, id) => {
+    navigator.clipboard.writeText(code)
+    setCopied(id)
+    setTimeout(() => setCopied(null), 2000)
   }
 
   return (
@@ -216,10 +239,9 @@ export default function Weddings() {
                   {/* Info */}
                   <div className="p-4">
                     <h3 className="text-white font-bold text-[15px] mb-1 truncate">{inv.coupleName}</h3>
-                    <p className="text-white/35 text-[12px] mb-4">
+                    <p className="text-white/35 text-[12px] mb-3">
+                      {t.name}&nbsp;·&nbsp;{inv.views} {inv.views === 1 ? 'view' : 'views'}&nbsp;·&nbsp;
                       {new Date(inv.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      &nbsp;·&nbsp;{inv.views} views
-                      {inv.photographerCode && <>&nbsp;·&nbsp;<span className="font-mono text-purple-400/70">{inv.photographerCode}</span></>}
                     </p>
 
                     {/* Action buttons */}
@@ -243,19 +265,47 @@ export default function Weddings() {
                         </svg>
                         Preview
                       </button>
+                      {inv.status === 'draft' && (
+                        <button
+                          onClick={() => handlePublish(inv.id)}
+                          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition-all duration-200 hover:-translate-y-px"
+                          style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)', color: '#34d399' }}
+                        >
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M5 12l5 5L20 7"/>
+                          </svg>
+                          Publish
+                        </button>
+                      )}
                       <button
-                        onClick={() => handleDelete(inv.id)}
-                        disabled={deleting === inv.id}
-                        className="ml-auto w-7 h-7 flex items-center justify-center rounded-full text-white/25 hover:text-rose-400 hover:bg-rose-500/[0.08] transition-all duration-200 disabled:opacity-40"
+                        onClick={() => setConfirmDelete(inv.id)}
+                        className="ml-auto w-7 h-7 flex items-center justify-center rounded-full text-white/25 hover:text-rose-400 hover:bg-rose-500/[0.08] transition-all duration-200"
                       >
-                        {deleting === inv.id
-                          ? <div className="w-3.5 h-3.5 border border-rose-400/40 border-t-rose-400 rounded-full animate-spin" />
-                          : <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                            </svg>
-                        }
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                        </svg>
                       </button>
                     </div>
+
+                    {/* Photographer Code */}
+                    {inv.photographerCode && (
+                      <div className="mt-3 pt-3 border-t border-white/[0.06] flex items-center justify-between">
+                        <div>
+                          <p className="text-white/30 text-[10px] font-semibold tracking-wider uppercase mb-0.5">Photographer Code</p>
+                          <p className="text-white/70 text-[13px] font-mono font-bold tracking-wider">{inv.photographerCode}</p>
+                        </div>
+                        <button
+                          onClick={() => handleCopy(inv.photographerCode, inv.id)}
+                          className="px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all duration-200"
+                          style={copied === inv.id
+                            ? { background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)', color: '#34d399' }
+                            : { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)', color: 'rgba(255,255,255,0.5)' }
+                          }
+                        >
+                          {copied === inv.id ? 'Copied!' : 'Copy'}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               )
@@ -263,6 +313,42 @@ export default function Weddings() {
           </div>
         )}
       </main>
+
+      {/* Delete Confirmation Modal */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ animation: 'modal-bg-in 0.2s ease both' }}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setConfirmDelete(null)} />
+          <div className="relative glass-card w-full max-w-[360px] p-6 text-center"
+            style={{ borderRadius: '36px', animation: 'modal-card-in 0.28s cubic-bezier(0.34,1.38,0.64,1) both' }}>
+            <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4"
+              style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.22)' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+            </div>
+            <h3 className="text-white font-bold text-[16px] mb-1">Delete Invitation?</h3>
+            <p className="text-white/40 text-[13px] mb-6 leading-relaxed">
+              This will permanently delete the invitation and all its photos. This cannot be undone.
+            </p>
+            <div className="flex items-center justify-center gap-3">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="px-6 py-2.5 rounded-full text-[13px] font-semibold text-white/60 hover:text-white/90 bg-white/[0.055] hover:bg-white/[0.09] border border-white/[0.09] hover:border-white/[0.16] transition-all duration-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDelete(confirmDelete)}
+                className="px-6 py-2.5 rounded-full text-[13px] font-semibold text-white transition-all duration-200 hover:-translate-y-px"
+                style={{ background: 'linear-gradient(135deg, #dc2626, #b91c1c)', boxShadow: '0 4px 16px rgba(220,38,38,0.35)' }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Create Modal */}
       {showCreate && (
