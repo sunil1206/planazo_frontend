@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import logo from '../assets/logo.png'
 
-// ── Image compression ─────────────────────────────────────────────────────────
 function compressImage(file, maxPx = 800, quality = 0.68) {
   return new Promise(resolve => {
     const reader = new FileReader()
@@ -22,79 +21,72 @@ function compressImage(file, maxPx = 800, quality = 0.68) {
   })
 }
 
-// ── Gallery storage ───────────────────────────────────────────────────────────
-function saveGallery(invId, photos) {
-  try { localStorage.setItem(`planazo_gallery_w_${invId}`, JSON.stringify(photos)) }
+const BDAY_STORAGE = 'planazo_birthdays'
+const BDAY_PHOTO_KEYS = ['coverPhoto', 'personPhoto']
+
+function saveBdayGallery(bdayId, photos) {
+  try { localStorage.setItem(`planazo_gallery_b_${bdayId}`, JSON.stringify(photos)) }
   catch(e) { alert('Storage full — delete some gallery photos to free space.') }
 }
-function loadGallery(invId) {
-  return JSON.parse(localStorage.getItem(`planazo_gallery_w_${invId}`) || '[]')
+function loadBdayGallery(bdayId) {
+  return JSON.parse(localStorage.getItem(`planazo_gallery_b_${bdayId}`) || '[]')
 }
 
-// ── Mock API ──────────────────────────────────────────────────────────────────
-// Photos are stored in separate keys to avoid blowing the 5MB localStorage quota.
-const PHOTO_KEYS = ['coverPhoto', 'groomPhoto', 'bridePhoto']
-
-function savePhoto(invId, key, dataUrl) {
-  try { localStorage.setItem(`planazo_photo_${invId}_${key}`, dataUrl || '') }
+function saveBdayPhoto(id, key, dataUrl) {
+  try { localStorage.setItem(`planazo_bday_photo_${id}_${key}`, dataUrl || '') }
   catch (e) {
     console.error('Photo storage failed (quota exceeded):', e)
     alert('Storage full — please delete some photos from other events to free up space.')
   }
 }
 
-function loadPhotos(id) {
+function loadBdayPhotos(id) {
   const out = {}
-  PHOTO_KEYS.forEach(k => { out[k] = localStorage.getItem(`planazo_photo_${id}_${k}`) || null })
+  BDAY_PHOTO_KEYS.forEach(k => { out[k] = localStorage.getItem(`planazo_bday_photo_${id}_${k}`) || null })
   return out
 }
 
-function loadInvitation(id) {
-  const list = JSON.parse(localStorage.getItem('planazo_invitations') || '[]')
+function loadBirthday(id) {
+  const list = JSON.parse(localStorage.getItem(BDAY_STORAGE) || '[]')
   const inv  = list.find(i => i.id === id) || null
   if (!inv) return null
-  return { ...inv, ...loadPhotos(id) }
+  return { ...inv, ...loadBdayPhotos(id) }
 }
 
-function apiSaveInvitation(id, patch) {
-  // Strip photos from the main list — store them separately
-  const { coverPhoto, groomPhoto, bridePhoto, ...rest } = patch
-  if (coverPhoto !== undefined) savePhoto(id, 'coverPhoto', coverPhoto)
-  if (groomPhoto !== undefined) savePhoto(id, 'groomPhoto', groomPhoto)
-  if (bridePhoto !== undefined) savePhoto(id, 'bridePhoto', bridePhoto)
-
-  const list = JSON.parse(localStorage.getItem('planazo_invitations') || '[]')
+function apiSaveBirthday(id, patch) {
+  const { coverPhoto, personPhoto, ...rest } = patch
+  if (coverPhoto !== undefined) saveBdayPhoto(id, 'coverPhoto', coverPhoto)
+  if (personPhoto !== undefined) saveBdayPhoto(id, 'personPhoto', personPhoto)
+  const list = JSON.parse(localStorage.getItem(BDAY_STORAGE) || '[]')
   const idx  = list.findIndex(i => i.id === id)
   if (idx < 0) return null
   list[idx] = { ...list[idx], ...rest }
-  localStorage.setItem('planazo_invitations', JSON.stringify(list))
-  return { ...list[idx], ...loadPhotos(id) }
+  localStorage.setItem(BDAY_STORAGE, JSON.stringify(list))
+  return { ...list[idx], ...loadBdayPhotos(id) }
 }
 
-function apiPublish(id)   { return apiSaveInvitation(id, { status: 'live' }) }
-function apiUnpublish(id) { return apiSaveInvitation(id, { status: 'draft' }) }
+function apiPublishBday(id)   { return apiSaveBirthday(id, { status: 'live' }) }
+function apiUnpublishBday(id) { return apiSaveBirthday(id, { status: 'draft' }) }
 
-// ── Theme palettes ─────────────────────────────────────────────────────────────
-const THEME_PALETTE = {
-  royal_mughal:       { bg: 'linear-gradient(135deg,#5c1b0a,#92400e)', accent: '#d97706', emoji: '👑' },
-  kerala_traditional: { bg: 'linear-gradient(135deg,#4a0d0d,#92400e)', accent: '#fbbf24', emoji: '🌿' },
-  modern_minimal:     { bg: 'linear-gradient(135deg,#1f2937,#4b5563)', accent: '#e5e7eb', emoji: '✨' },
-  floral_pastel:      { bg: 'linear-gradient(135deg,#4a0525,#9d174d)', accent: '#fbcfe8', emoji: '🌸' },
-  cinematic_dark:     { bg: 'linear-gradient(135deg,#0a0a0a,#16213e)', accent: '#d4af6a', emoji: '🎬' },
-}
-
-const TABS = [
-  { id: 'general', label: 'General',    icon: '🎨' },
-  { id: 'couple',  label: 'The Couple', icon: '💑' },
-  { id: 'events',  label: 'Events',     icon: '🗓️' },
-  { id: 'story',   label: 'Our Story',  icon: '📖' },
-  { id: 'date',    label: 'Date',       icon: '⏳' },
-  { id: 'gallery', label: 'Gallery',    icon: '🖼️' },
-  { id: 'vendors', label: 'Vendors',    icon: '🤝' },
-  { id: 'publish', label: 'Publish',    icon: '🚀' },
+const BDAY_THEMES = [
+  { id: 'neon_party',    emoji: '🎉', name: 'Neon Party' },
+  { id: 'golden_royale', emoji: '👑', name: 'Golden Royale' },
+  { id: 'tropical',      emoji: '🌺', name: 'Tropical' },
+  { id: 'retro_pop',     emoji: '🕹️', name: 'Retro Pop' },
+  { id: 'rose_gold',     emoji: '🌸', name: 'Rose Gold' },
 ]
 
-// ── Custom Date Picker ─────────────────────────────────────────────────────────
+const TABS = [
+  { id: 'general',   label: 'General',   icon: '🎨' },
+  { id: 'person',    label: 'Person',    icon: '🎂' },
+  { id: 'events',    label: 'Events',    icon: '🗓️' },
+  { id: 'memories',  label: 'Memories',  icon: '📸' },
+  { id: 'countdown', label: 'Countdown', icon: '⏳' },
+  { id: 'gallery',   label: 'Gallery',   icon: '🖼️' },
+  { id: 'vendors',   label: 'Vendors',   icon: '🤝' },
+  { id: 'publish',   label: 'Publish',   icon: '🚀' },
+]
+
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December']
 
 function DatePicker({ value, onChange, placeholder = 'Select date' }) {
@@ -159,7 +151,7 @@ function DatePicker({ value, onChange, placeholder = 'Select date' }) {
               return (
                 <button key={d} type="button" onClick={() => pick(d)}
                   className={`aspect-square text-[12px] rounded-lg font-medium flex items-center justify-center transition-all duration-100
-                    ${isSel ? 'bg-purple-600 text-white' : isToday ? 'text-purple-400 ring-1 ring-purple-500/40' : 'text-white/55 hover:bg-white/[0.07] hover:text-white'}`}>
+                    ${isSel ? 'bg-amber-500 text-white' : isToday ? 'text-amber-400 ring-1 ring-amber-500/40' : 'text-white/55 hover:bg-white/[0.07] hover:text-white'}`}>
                   {d}
                 </button>
               )
@@ -168,7 +160,7 @@ function DatePicker({ value, onChange, placeholder = 'Select date' }) {
           <div className="flex justify-between mt-3 pt-2.5 border-t border-white/[0.07]">
             <button type="button" onClick={() => { onChange(''); setOpen(false) }} className="text-[11px] text-white/30 hover:text-white/60 transition-colors">Clear</button>
             <button type="button" onClick={() => { const t = new Date(); setVm({ m: t.getMonth(), y: t.getFullYear() }); pick(t.getDate()) }}
-              className="text-[11px] text-purple-400 hover:text-purple-300 font-semibold transition-colors">Today</button>
+              className="text-[11px] text-amber-400 hover:text-amber-300 font-semibold transition-colors">Today</button>
           </div>
         </div>
       )}
@@ -176,7 +168,6 @@ function DatePicker({ value, onChange, placeholder = 'Select date' }) {
   )
 }
 
-// ── Custom Time Picker ─────────────────────────────────────────────────────────
 function TimePicker({ value, onChange, placeholder = 'Select time' }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
@@ -219,7 +210,7 @@ function TimePicker({ value, onChange, placeholder = 'Select time' }) {
               {HOURS.map(h => (
                 <button key={h} type="button" onClick={() => setTs(s => ({ ...s, h }))}
                   className={`py-1.5 rounded-lg text-[12px] font-semibold text-center transition-all duration-100
-                    ${ts.h === h ? 'bg-purple-600 text-white' : 'text-white/40 hover:bg-white/[0.07] hover:text-white'}`}>
+                    ${ts.h === h ? 'bg-amber-500 text-white' : 'text-white/40 hover:bg-white/[0.07] hover:text-white'}`}>
                   {h}
                 </button>
               ))}
@@ -228,7 +219,7 @@ function TimePicker({ value, onChange, placeholder = 'Select time' }) {
               {MINS.map(m => (
                 <button key={m} type="button" onClick={() => setTs(s => ({ ...s, m }))}
                   className={`py-1.5 rounded-lg text-[12px] font-semibold text-center transition-all duration-100
-                    ${ts.m === m ? 'bg-purple-600 text-white' : 'text-white/40 hover:bg-white/[0.07] hover:text-white'}`}>
+                    ${ts.m === m ? 'bg-amber-500 text-white' : 'text-white/40 hover:bg-white/[0.07] hover:text-white'}`}>
                   {String(m).padStart(2,'0')}
                 </button>
               ))}
@@ -237,7 +228,7 @@ function TimePicker({ value, onChange, placeholder = 'Select time' }) {
               {['AM','PM'].map(ap => (
                 <button key={ap} type="button" onClick={() => setTs(s => ({ ...s, ap }))}
                   className={`py-2.5 rounded-lg text-[11px] font-bold text-center transition-all duration-100
-                    ${ts.ap === ap ? 'bg-purple-600 text-white' : 'text-white/40 hover:bg-white/[0.07] hover:text-white'}`}>
+                    ${ts.ap === ap ? 'bg-amber-500 text-white' : 'text-white/40 hover:bg-white/[0.07] hover:text-white'}`}>
                   {ap}
                 </button>
               ))}
@@ -245,7 +236,7 @@ function TimePicker({ value, onChange, placeholder = 'Select time' }) {
           </div>
           <button type="button" onClick={() => { onChange(toVal(ts)); setOpen(false) }}
             className="w-full mt-3 py-2 rounded-xl text-[12px] font-bold text-white"
-            style={{ background: 'linear-gradient(135deg,#7c3aed,#4f46e5)' }}>
+            style={{ background: 'linear-gradient(135deg,#d97706,#f59e0b)' }}>
             Confirm
           </button>
         </div>
@@ -254,8 +245,7 @@ function TimePicker({ value, onChange, placeholder = 'Select time' }) {
   )
 }
 
-// ── Phone Preview ──────────────────────────────────────────────────────────────
-const PREVIEW_SCALE = 210 / 390  // ≈ 0.5385
+const PREVIEW_SCALE = 210 / 390
 
 function PhonePreview({ id, version }) {
   const [loaded, setLoaded] = useState(false)
@@ -282,12 +272,12 @@ function PhonePreview({ id, version }) {
         <div style={{ width: '210px', height: wrapperH + 'px', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
           {!loaded && (
             <div className="absolute inset-0 flex items-center justify-center" style={{ background: '#0a0a0a' }}>
-              <div className="w-5 h-5 rounded-full border border-purple-500/30 border-t-purple-400 animate-spin" />
+              <div className="w-5 h-5 rounded-full border border-amber-500/30 border-t-amber-400 animate-spin" />
             </div>
           )}
           <iframe
             key={version}
-            src={`/invite/${id}?preview=1`}
+            src={`/birthday/${id}?preview=1`}
             title="Live Preview"
             onLoad={() => setLoaded(true)}
             style={{
@@ -306,27 +296,25 @@ function PhonePreview({ id, version }) {
   )
 }
 
-// ── Person Section (module-level to prevent focus loss on re-render) ───────────
-function PersonSection({ prefix, title, emoji, data, onChange }) {
+function BdayPersonSection({ data, onChange }) {
   const photoRef = useRef(null)
   const handlePhoto = async (e) => {
     const file = e.target.files?.[0]; if (!file) return
     const compressed = await compressImage(file)
-    onChange(`${prefix}Photo`, compressed)
+    onChange('personPhoto', compressed)
   }
-  const photo = data[`${prefix}Photo`]
   return (
     <div className="glass-card p-4 space-y-3">
       <div className="flex items-center gap-2 mb-1">
-        <span>{emoji}</span>
-        <h3 className="text-white font-semibold text-[14px]">{title}</h3>
+        <span>🎂</span>
+        <h3 className="text-white font-semibold text-[14px]">Birthday Person</h3>
       </div>
       <div className="flex justify-center">
         <div onClick={() => photoRef.current?.click()}
           className="rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-all duration-200 hover:bg-white/[0.055] overflow-hidden relative"
           style={{ width: '180px', height: '250px', background: 'rgba(255,255,255,0.03)', border: '1.5px dashed rgba(255,255,255,0.12)' }}>
-          {photo
-            ? <img src={photo} alt="" className="w-full h-full object-cover object-top" />
+          {data.personPhoto
+            ? <img src={data.personPhoto} alt="" className="w-full h-full object-cover object-top" />
             : <>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
@@ -339,49 +327,45 @@ function PersonSection({ prefix, title, emoji, data, onChange }) {
       <input ref={photoRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
       <div className="field-group">
         <label className="field-label">Full Name</label>
-        <input className="glass-input" value={data[`${prefix}FullName`] || ''} onChange={e => onChange(`${prefix}FullName`, e.target.value)} />
+        <input className="glass-input" value={data.personFullName || ''} onChange={e => onChange('personFullName', e.target.value)} placeholder="e.g. Rohan Sharma" />
       </div>
       <div className="field-group">
-        <label className="field-label">Bio</label>
-        <textarea className="glass-input resize-none" rows={2} value={data[`${prefix}Bio`] || ''} onChange={e => onChange(`${prefix}Bio`, e.target.value)} placeholder="A short introduction…" />
+        <label className="field-label">Age Turning</label>
+        <input className="glass-input" type="number" min="1" max="120" value={data.personAge || ''} onChange={e => onChange('personAge', e.target.value)} placeholder="e.g. 25" />
+      </div>
+      <div className="field-group">
+        <label className="field-label">About</label>
+        <textarea className="glass-input resize-none" rows={2} value={data.personBio || ''} onChange={e => onChange('personBio', e.target.value)} placeholder="A short bio or fun facts…" />
       </div>
       <div className="field-group">
         <label className="field-label">Instagram</label>
-        <input className="glass-input" placeholder="@username" value={data[`${prefix}Instagram`] || ''} onChange={e => onChange(`${prefix}Instagram`, e.target.value)} />
+        <input className="glass-input" placeholder="@username" value={data.personInstagram || ''} onChange={e => onChange('personInstagram', e.target.value)} />
       </div>
     </div>
   )
 }
 
-// ── Tab panels ─────────────────────────────────────────────────────────────────
-function TabGeneral({ data, onChange, onNext, isLast }) {
+function TabGeneral({ data, onChange, onNext }) {
   const coverRef = useRef(null)
   const handleCoverUpload = async (e) => {
     const file = e.target.files?.[0]; if (!file) return
     const compressed = await compressImage(file, 900, 0.72)
     onChange('coverPhoto', compressed)
   }
-  const THEMES = [
-    { id: 'royal_mughal',       emoji: '👑', name: 'Royal Mughal' },
-    { id: 'kerala_traditional', emoji: '🌿', name: 'Kerala Traditional' },
-    { id: 'modern_minimal',     emoji: '✨', name: 'Modern Minimal' },
-    { id: 'floral_pastel',      emoji: '🌸', name: 'Floral Pastel' },
-    { id: 'cinematic_dark',     emoji: '🎬', name: 'Cinematic Dark' },
-  ]
   return (
     <div className="space-y-5">
       <div className="field-group">
-        <label className="field-label">Couple Name</label>
-        <input className="glass-input" value={data.coupleName || ''} onChange={e => onChange('coupleName', e.target.value)} />
+        <label className="field-label">Event Title</label>
+        <input className="glass-input" value={data.eventTitle || ''} onChange={e => onChange('eventTitle', e.target.value)} placeholder="e.g. Rohan's 25th Birthday Bash" />
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="field-group">
-          <label className="field-label">Groom's Full Name</label>
-          <input className="glass-input" value={data.groomFullName || ''} onChange={e => onChange('groomFullName', e.target.value)} />
+          <label className="field-label">Person's Name</label>
+          <input className="glass-input" value={data.personName || ''} onChange={e => onChange('personName', e.target.value)} placeholder="e.g. Rohan" />
         </div>
         <div className="field-group">
-          <label className="field-label">Bride's Full Name</label>
-          <input className="glass-input" value={data.brideFullName || ''} onChange={e => onChange('brideFullName', e.target.value)} />
+          <label className="field-label">Age Turning</label>
+          <input className="glass-input" type="number" min="1" max="120" value={data.personAge || ''} onChange={e => onChange('personAge', e.target.value)} placeholder="25" />
         </div>
       </div>
       <div className="field-group">
@@ -406,32 +390,31 @@ function TabGeneral({ data, onChange, onNext, isLast }) {
       <div className="field-group">
         <label className="field-label">Theme</label>
         <div className="grid grid-cols-5 gap-2 mt-1">
-          {THEMES.map(t => (
+          {BDAY_THEMES.map(t => (
             <button key={t.id} type="button" onClick={() => onChange('theme', t.id)}
               className={`flex flex-col items-center gap-1.5 py-2.5 rounded-xl border transition-all duration-150
-                ${data.theme === t.id ? 'border-purple-500/50 bg-purple-500/10' : 'border-white/[0.07] bg-white/[0.03] hover:border-white/[0.13]'}`}>
+                ${data.theme === t.id ? 'border-amber-500/50 bg-amber-500/10' : 'border-white/[0.07] bg-white/[0.03] hover:border-white/[0.13]'}`}>
               <span className="text-xl">{t.emoji}</span>
               <p className="text-[9px] text-white/50 text-center leading-tight">{t.name.split(' ')[0]}</p>
             </button>
           ))}
         </div>
       </div>
-      <SaveBtn onNext={onNext} isLast={isLast} />
+      <SaveBtn onNext={onNext} isLast={false} />
     </div>
   )
 }
 
-function TabCouple({ data, onChange, onNext, isLast }) {
+function TabPerson({ data, onChange, onNext }) {
   return (
     <div className="space-y-4">
-      <PersonSection prefix="groom" title="The Groom" emoji="🤵" data={data} onChange={onChange} />
-      <PersonSection prefix="bride" title="The Bride"  emoji="👰" data={data} onChange={onChange} />
-      <SaveBtn onNext={onNext} isLast={isLast} />
+      <BdayPersonSection data={data} onChange={onChange} />
+      <SaveBtn onNext={onNext} isLast={false} />
     </div>
   )
 }
 
-function TabEvents({ data, onChange, onNext, isLast }) {
+function TabEvents({ data, onChange, onNext }) {
   const events = data.events || []
   const addEvent    = () => onChange('events', [...events, { id: Date.now(), name: '', date: '', time: '', venue: '', address: '', mapLink: '' }])
   const updateEvent = (id, field, val) => onChange('events', events.map(e => e.id === id ? { ...e, [field]: val } : e))
@@ -451,7 +434,7 @@ function TabEvents({ data, onChange, onNext, isLast }) {
           <div className="grid grid-cols-2 gap-3">
             <div className="field-group col-span-2">
               <label className="field-label">Event Name</label>
-              <input className="glass-input" placeholder="e.g. Wedding Ceremony" value={ev.name} onChange={e => updateEvent(ev.id, 'name', e.target.value)} />
+              <input className="glass-input" placeholder="e.g. Birthday Party" value={ev.name} onChange={e => updateEvent(ev.id, 'name', e.target.value)} />
             </div>
             <div className="field-group">
               <label className="field-label">Date</label>
@@ -477,20 +460,20 @@ function TabEvents({ data, onChange, onNext, isLast }) {
         </div>
       ))}
       <button onClick={addEvent}
-        className="w-full py-3 rounded-xl text-[13px] font-semibold text-purple-400 hover:text-purple-300 transition-colors duration-200"
-        style={{ background: 'rgba(124,58,237,0.07)', border: '1.5px dashed rgba(124,58,237,0.30)' }}>
+        className="w-full py-3 rounded-xl text-[13px] font-semibold text-amber-400 hover:text-amber-300 transition-colors duration-200"
+        style={{ background: 'rgba(217,119,6,0.07)', border: '1.5px dashed rgba(217,119,6,0.30)' }}>
         + Add Event
       </button>
-      <SaveBtn onNext={onNext} isLast={isLast} />
+      <SaveBtn onNext={onNext} isLast={false} />
     </div>
   )
 }
 
-function TabStory({ data, onChange, onNext, isLast }) {
+function TabMemories({ data, onChange, onNext }) {
   const [adding, setAdding] = useState(false)
   const [draft, setDraft]   = useState({ emoji: '✨', title: '', description: '', date: '', photo: null })
   const imgRef = useRef(null)
-  const moments = data.story || []
+  const memories = data.memories || []
 
   const handleMomentPhoto = async (e) => {
     const file = e.target.files?.[0]; if (!file) return
@@ -500,38 +483,36 @@ function TabStory({ data, onChange, onNext, isLast }) {
 
   const submitDraft = () => {
     if (!draft.title.trim()) return
-    onChange('story', [...moments, { ...draft, id: Date.now() }])
+    onChange('memories', [...memories, { ...draft, id: Date.now() }])
     setDraft({ emoji: '✨', title: '', description: '', date: '', photo: null })
     setAdding(false)
   }
-  const remove = (id) => onChange('story', moments.filter(m => m.id !== id))
+  const remove = (id) => onChange('memories', memories.filter(m => m.id !== id))
 
   return (
     <div className="space-y-4">
-      {/* Header */}
       <div className="flex items-center gap-3 pb-3 border-b border-white/[0.07]">
         <div className="w-9 h-9 rounded-full flex items-center justify-center text-lg shrink-0"
-          style={{ background: 'rgba(251,146,60,0.12)', border: '1px solid rgba(251,146,60,0.22)' }}>
-          📖
+          style={{ background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.22)' }}>
+          ✨
         </div>
         <div>
-          <h3 className="text-white font-semibold text-[15px]">Our Story</h3>
-          <p className="text-white/40 text-[12px]">Share the journey that brought you together</p>
+          <h3 className="text-white font-semibold text-[15px]">Memories & Highlights</h3>
+          <p className="text-white/40 text-[12px]">Share favourite moments and milestones</p>
         </div>
       </div>
 
-      {/* Timeline */}
-      {moments.length > 0 && (
+      {memories.length > 0 && (
         <div className="space-y-0">
-          {moments.map((m, i) => (
+          {memories.map((m, i) => (
             <div key={m.id} className="flex gap-3">
               <div className="flex flex-col items-center">
                 <div className="w-9 h-9 rounded-full flex items-center justify-center text-base shrink-0"
-                  style={{ background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.22)' }}>
+                  style={{ background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.22)' }}>
                   {m.emoji}
                 </div>
-                {i < moments.length - 1 && (
-                  <div className="w-px flex-1 my-1" style={{ background: 'rgba(124,58,237,0.18)', minHeight: '16px' }} />
+                {i < memories.length - 1 && (
+                  <div className="w-px flex-1 my-1" style={{ background: 'rgba(217,119,6,0.18)', minHeight: '16px' }} />
                 )}
               </div>
               <div className="flex-1 pb-4">
@@ -562,17 +543,16 @@ function TabStory({ data, onChange, onNext, isLast }) {
         </div>
       )}
 
-      {/* Add form */}
       {adding ? (
         <div className="rounded-2xl p-5 space-y-4"
-          style={{ background: 'rgba(124,58,237,0.07)', border: '1px solid rgba(124,58,237,0.20)' }}>
+          style={{ background: 'rgba(217,119,6,0.07)', border: '1px solid rgba(217,119,6,0.20)' }}>
           <div className="flex items-center gap-2">
-            <span className="text-purple-400 text-lg">✨</span>
-            <h4 className="text-white font-bold text-[14px]">New Story Moment</h4>
+            <span className="text-amber-400 text-lg">✨</span>
+            <h4 className="text-white font-bold text-[14px]">New Memory</h4>
           </div>
           <div className="field-group">
             <label className="field-label">Title <span className="text-rose-400 normal-case font-normal">*</span></label>
-            <input className="glass-input" placeholder="e.g. How We Met, The Proposal…" value={draft.title}
+            <input className="glass-input" placeholder="e.g. First day at school, College grad…" value={draft.title}
               onChange={e => setDraft(d => ({ ...d, title: e.target.value }))} />
           </div>
           <div className="field-group">
@@ -580,8 +560,8 @@ function TabStory({ data, onChange, onNext, isLast }) {
             <DatePicker value={draft.date} onChange={v => setDraft(d => ({ ...d, date: v }))} placeholder="When did this happen?" />
           </div>
           <div className="field-group">
-            <label className="field-label">Story</label>
-            <textarea className="glass-input resize-none" rows={3} placeholder="Tell the story behind this moment…"
+            <label className="field-label">Description</label>
+            <textarea className="glass-input resize-none" rows={3} placeholder="Tell the story behind this memory…"
               value={draft.description} onChange={e => setDraft(d => ({ ...d, description: e.target.value }))} />
           </div>
           <div className="field-group">
@@ -589,25 +569,25 @@ function TabStory({ data, onChange, onNext, isLast }) {
               Photo <span className="text-white/30 normal-case font-normal ml-1">(optional)</span>
             </label>
             <div className="flex justify-center">
-            <div onClick={() => imgRef.current?.click()}
-              className="rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-all duration-200 hover:bg-white/[0.055] overflow-hidden relative"
-              style={{ width: '160px', height: '220px', background: 'rgba(255,255,255,0.03)', border: '1.5px dashed rgba(255,255,255,0.12)' }}>
-              {draft.photo
-                ? <>
-                    <img src={draft.photo} alt="" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
-                      style={{ background: 'rgba(0,0,0,0.45)' }}>
-                      <span className="text-white/80 text-[12px] font-semibold">Click to change</span>
-                    </div>
-                  </>
-                : <>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-                    </svg>
-                    <p className="text-white/30 text-[11px]">Upload a photo for this moment</p>
-                  </>
-              }
-            </div>
+              <div onClick={() => imgRef.current?.click()}
+                className="rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-all duration-200 hover:bg-white/[0.055] overflow-hidden relative"
+                style={{ width: '160px', height: '220px', background: 'rgba(255,255,255,0.03)', border: '1.5px dashed rgba(255,255,255,0.12)' }}>
+                {draft.photo
+                  ? <>
+                      <img src={draft.photo} alt="" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+                        style={{ background: 'rgba(0,0,0,0.45)' }}>
+                        <span className="text-white/80 text-[12px] font-semibold">Click to change</span>
+                      </div>
+                    </>
+                  : <>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                      </svg>
+                      <p className="text-white/30 text-[11px]">Upload a photo for this memory</p>
+                    </>
+                }
+              </div>
             </div>
             <input ref={imgRef} type="file" accept="image/*" className="hidden" onChange={handleMomentPhoto} />
             {draft.photo && (
@@ -620,8 +600,8 @@ function TabStory({ data, onChange, onNext, isLast }) {
           <div className="flex items-center gap-2.5">
             <button onClick={submitDraft} disabled={!draft.title.trim()}
               className="px-5 py-2 rounded-full text-[13px] font-semibold text-white transition-all duration-200 disabled:opacity-40"
-              style={{ background: 'linear-gradient(135deg,#7c3aed,#4f46e5)', boxShadow: '0 4px 12px rgba(124,58,237,0.30)' }}>
-              Add Story
+              style={{ background: 'linear-gradient(135deg,#d97706,#f59e0b)', boxShadow: '0 4px 12px rgba(217,119,6,0.30)' }}>
+              Add Memory
             </button>
             <button onClick={() => { setAdding(false); setDraft({ emoji: '✨', title: '', description: '', date: '', photo: null }) }}
               className="px-5 py-2 rounded-full text-[13px] font-semibold text-white/50 hover:text-white bg-white/[0.05] hover:bg-white/[0.09] border border-white/[0.09] transition-all duration-200">
@@ -631,62 +611,63 @@ function TabStory({ data, onChange, onNext, isLast }) {
         </div>
       ) : (
         <button onClick={() => setAdding(true)}
-          className="w-full py-3 rounded-xl text-[13px] font-semibold text-purple-400 hover:text-purple-300 transition-colors duration-200"
-          style={{ background: 'rgba(124,58,237,0.07)', border: '1.5px dashed rgba(124,58,237,0.30)' }}>
-          + Add Story Moment
+          className="w-full py-3 rounded-xl text-[13px] font-semibold text-amber-400 hover:text-amber-300 transition-colors duration-200"
+          style={{ background: 'rgba(217,119,6,0.07)', border: '1.5px dashed rgba(217,119,6,0.30)' }}>
+          + Add Memory
         </button>
       )}
 
-      <SaveBtn onNext={onNext} isLast={isLast} />
+      <SaveBtn onNext={onNext} isLast={false} />
     </div>
   )
 }
 
-function TabDate({ data, onChange, onNext, isLast }) {
-  const [dateStr, timeStr] = (data.weddingDate || 'T').split('T')
-  const handleDate = (d) => onChange('weddingDate', d ? `${d}T${timeStr || '09:00'}` : '')
-  const handleTime = (t) => onChange('weddingDate', dateStr ? `${dateStr}T${t}` : '')
+function TabCountdown({ data, onChange, onNext }) {
+  const [dateStr, timeStr] = (data.birthdayDate || 'T').split('T')
+  const handleDate = (d) => onChange('birthdayDate', d ? `${d}T${timeStr || '00:00'}` : '')
+  const handleTime = (t) => onChange('birthdayDate', dateStr ? `${dateStr}T${t}` : '')
 
   return (
     <div className="space-y-5">
       <div className="field-group">
         <label className="field-label">Countdown Heading</label>
-        <input className="glass-input" value={data.weddingDateHeading || ''} onChange={e => onChange('weddingDateHeading', e.target.value)} placeholder="We Are Getting Married!" />
+        <input className="glass-input" value={data.birthdayDateHeading || ''} onChange={e => onChange('birthdayDateHeading', e.target.value)} placeholder="Counting Down to the Big Day!" />
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="field-group">
-          <label className="field-label">Wedding Date</label>
+          <label className="field-label">Birthday Date</label>
           <DatePicker value={dateStr} onChange={handleDate} placeholder="Choose date" />
         </div>
         <div className="field-group">
-          <label className="field-label">Wedding Time</label>
+          <label className="field-label">Party Time</label>
           <TimePicker value={timeStr} onChange={handleTime} placeholder="Choose time" />
         </div>
       </div>
-      {data.weddingDate && data.weddingDate !== 'T' && (
+      {data.birthdayDate && data.birthdayDate !== 'T' && (
         <div className="glass-card p-4 text-center">
           <p className="text-white/40 text-[11px] tracking-widest uppercase mb-2">Preview</p>
           <p className="text-white font-bold text-[17px]">
-            {new Date(data.weddingDate).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            {new Date(data.birthdayDate).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
           <p className="text-white/50 text-[13px] mt-0.5">
-            {new Date(data.weddingDate).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+            {new Date(data.birthdayDate).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
           </p>
         </div>
       )}
-      <SaveBtn onNext={onNext} isLast={isLast} />
+      <SaveBtn onNext={onNext} isLast={false} />
     </div>
   )
 }
 
-function TabVendors({ data, onChange, onNext, isLast }) {
+function TabVendors({ data, onChange, onNext }) {
   const [query, setQuery] = useState('')
   const vendors = data.vendors || []
   const mockSearch = [
-    { id: 'v1', name: 'Prism Photography',  category: 'Photography' },
-    { id: 'v2', name: 'Bloom Florals',       category: 'Decoration' },
-    { id: 'v3', name: 'Golden Catering Co.', category: 'Catering' },
-    { id: 'v4', name: 'Melody Music Band',   category: 'Entertainment' },
+    { id: 'bv1', name: 'Sweet Delights Bakery',  category: 'Cake & Desserts' },
+    { id: 'bv2', name: 'Clicks & Memories',       category: 'Photography' },
+    { id: 'bv3', name: 'Party Bloom Decor',       category: 'Decoration' },
+    { id: 'bv4', name: 'Beat Drop DJs',           category: 'Entertainment' },
+    { id: 'bv5', name: 'Golden Catering Co.',     category: 'Catering' },
   ].filter(v => query && (v.name.toLowerCase().includes(query.toLowerCase()) || v.category.toLowerCase().includes(query.toLowerCase())))
 
   const addVendor    = (v) => { if (!vendors.find(x => x.id === v.id)) onChange('vendors', [...vendors, v]); setQuery('') }
@@ -696,7 +677,7 @@ function TabVendors({ data, onChange, onNext, isLast }) {
     <div className="space-y-4">
       <div className="field-group">
         <label className="field-label">Search Vendors</label>
-        <input className="glass-input" value={query} onChange={e => setQuery(e.target.value)} placeholder="Photography, catering, decoration…" />
+        <input className="glass-input" value={query} onChange={e => setQuery(e.target.value)} placeholder="Cake, photography, decoration, DJ…" />
         {mockSearch.length > 0 && (
           <div className="mt-2 rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.09)' }}>
             {mockSearch.map(v => (
@@ -706,7 +687,7 @@ function TabVendors({ data, onChange, onNext, isLast }) {
                   <p className="text-white text-[13px] font-medium">{v.name}</p>
                   <p className="text-white/40 text-[11px]">{v.category}</p>
                 </div>
-                <span className="text-purple-400 text-[12px] font-semibold">Add +</span>
+                <span className="text-amber-400 text-[12px] font-semibold">Add +</span>
               </button>
             ))}
           </div>
@@ -717,7 +698,7 @@ function TabVendors({ data, onChange, onNext, isLast }) {
           <p className="field-label">Selected Vendors</p>
           {vendors.map(v => (
             <div key={v.id} className="flex items-center justify-between px-3.5 py-2.5 rounded-xl"
-              style={{ background: 'rgba(124,58,237,0.07)', border: '1px solid rgba(124,58,237,0.18)' }}>
+              style={{ background: 'rgba(217,119,6,0.07)', border: '1px solid rgba(217,119,6,0.18)' }}>
               <div>
                 <p className="text-white text-[13px] font-medium">{v.name}</p>
                 <p className="text-white/40 text-[11px]">{v.category}</p>
@@ -731,16 +712,16 @@ function TabVendors({ data, onChange, onNext, isLast }) {
           ))}
         </div>
       )}
-      <SaveBtn onNext={onNext} isLast={isLast} />
+      <SaveBtn onNext={onNext} isLast={false} />
     </div>
   )
 }
 
-function TabGallery({ invId, onNext, isLast }) {
-  const [photos, setPhotos] = useState(() => loadGallery(invId))
-  const [category, setCategory] = useState('Ceremony')
+function TabGallery({ bdayId, onNext, isLast }) {
+  const [photos, setPhotos] = useState(() => loadBdayGallery(bdayId))
+  const [category, setCategory] = useState('Party')
   const fileRef = useRef(null)
-  const CATS = ['Ceremony', 'Reception', 'Mehndi', 'Sangeet', 'Couple', 'Group']
+  const CATS = ['Party', 'Cake Cutting', 'Group', 'Fun Moments', 'Pre-Party', 'Candid']
 
   const handleUpload = async (e) => {
     const files = Array.from(e.target.files || [])
@@ -750,24 +731,24 @@ function TabGallery({ invId, onNext, isLast }) {
       current = [...current, { id: Date.now() + Math.random(), photo: compressed, category }]
     }
     setPhotos(current)
-    saveGallery(invId, current)
+    saveBdayGallery(bdayId, current)
     e.target.value = ''
   }
 
   const remove = (photoId) => {
     const updated = photos.filter(p => p.id !== photoId)
     setPhotos(updated)
-    saveGallery(invId, updated)
+    saveBdayGallery(bdayId, updated)
   }
 
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3 pb-3 border-b border-white/[0.07]">
         <div className="w-9 h-9 rounded-full flex items-center justify-center text-lg shrink-0"
-          style={{ background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.22)' }}>🖼️</div>
+          style={{ background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.22)' }}>🖼️</div>
         <div>
           <h3 className="text-white font-semibold text-[15px]">Event Gallery</h3>
-          <p className="text-white/40 text-[12px]">Upload event photos for guests to browse & download</p>
+          <p className="text-white/40 text-[12px]">Upload party photos for guests to browse & download</p>
         </div>
       </div>
       <div className="field-group">
@@ -776,15 +757,15 @@ function TabGallery({ invId, onNext, isLast }) {
           {CATS.map(c => (
             <button key={c} type="button" onClick={() => setCategory(c)}
               className={`px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all duration-150 border
-                ${category === c ? 'bg-purple-500/20 text-purple-300 border-purple-500/40' : 'bg-white/[0.04] text-white/40 border-white/[0.08] hover:border-white/20'}`}>
+                ${category === c ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-white/[0.04] text-white/40 border-white/[0.08] hover:border-white/20'}`}>
               {c}
             </button>
           ))}
         </div>
       </div>
       <button type="button" onClick={() => fileRef.current?.click()}
-        className="w-full py-3 rounded-xl text-[13px] font-semibold text-purple-400 hover:text-purple-300 transition-colors duration-200"
-        style={{ background: 'rgba(124,58,237,0.07)', border: '1.5px dashed rgba(124,58,237,0.30)' }}>
+        className="w-full py-3 rounded-xl text-[13px] font-semibold text-amber-400 hover:text-amber-300 transition-colors duration-200"
+        style={{ background: 'rgba(217,119,6,0.07)', border: '1.5px dashed rgba(217,119,6,0.30)' }}>
         + Upload Photos ({category})
       </button>
       <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleUpload} />
@@ -817,13 +798,12 @@ function TabGallery({ invId, onNext, isLast }) {
 }
 
 function TabPublish({ data, invId, onPublish, onUnpublish, onNext }) {
-  const invUrl = `${window.location.origin}/invite/${invId}`
+  const invUrl = `${window.location.origin}/birthday/${invId}`
   const [copied, setCopied] = useState(false)
   const copyUrl = () => { navigator.clipboard.writeText(invUrl); setCopied(true); setTimeout(() => setCopied(false), 2000) }
 
   return (
     <div className="space-y-4">
-      {/* Status */}
       <div className="glass-card p-6 text-center space-y-4">
         <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-bold
           ${data.status === 'live'
@@ -843,9 +823,9 @@ function TabPublish({ data, invId, onPublish, onUnpublish, onNext }) {
         ) : (
           <button onClick={onPublish}
             className="relative group overflow-hidden px-8 py-3 rounded-full text-[14px] font-bold text-white transition-all duration-300 hover:-translate-y-0.5"
-            style={{ background: 'linear-gradient(135deg,#7c3aed 0%,#4f46e5 50%,#6366f1 100%)', boxShadow: '0 6px 28px rgba(124,58,237,0.50), 0 0 0 1px rgba(255,255,255,0.08) inset' }}>
+            style={{ background: 'linear-gradient(135deg,#d97706 0%,#f59e0b 50%,#fbbf24 100%)', boxShadow: '0 6px 28px rgba(217,119,6,0.50), 0 0 0 1px rgba(255,255,255,0.08) inset' }}>
             <span className="relative z-10 flex items-center gap-2">
-              <span className="text-[16px]">🚀</span>
+              <span className="text-[16px]">🎉</span>
               Publish Now
             </span>
             <span className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
@@ -854,14 +834,13 @@ function TabPublish({ data, invId, onPublish, onUnpublish, onNext }) {
         )}
       </div>
 
-      {/* Share URL */}
       <div className="glass-card p-4 space-y-3">
         <p className="field-label">Invitation URL</p>
         <div className="flex items-center gap-2">
           <div className="flex-1 glass-input text-[12px] text-white/50 truncate py-2.5 select-all cursor-text">{invUrl}</div>
           <button onClick={copyUrl}
             className={`px-4 py-2.5 rounded-xl text-[12px] font-semibold transition-all duration-200 shrink-0
-              ${copied ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25' : 'bg-purple-500/12 text-purple-400 border border-purple-500/25 hover:bg-purple-500/20'}`}>
+              ${copied ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25' : 'bg-amber-500/12 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20'}`}>
             {copied ? '✓ Copied' : 'Copy'}
           </button>
         </div>
@@ -872,11 +851,10 @@ function TabPublish({ data, invId, onPublish, onUnpublish, onNext }) {
         </a>
       </div>
 
-      {/* Stats */}
       <div className="glass-card p-4">
         <p className="field-label mb-3">Engagement Stats</p>
         <div className="grid grid-cols-3 gap-3 text-center">
-          {[{ label: 'Views', value: data.views || 0, icon: '👁' },{ label: 'RSVPs', value: 0, icon: '✉️' },{ label: 'Wishes', value: 0, icon: '💬' }].map(s => (
+          {[{ label: 'Views', value: data.views || 0, icon: '👁' },{ label: 'RSVPs', value: 0, icon: '✉️' },{ label: 'Wishes', value: 0, icon: '🎂' }].map(s => (
             <div key={s.label} className="rounded-xl py-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
               <p className="text-xl mb-1">{s.icon}</p>
               <p className="text-white font-bold text-[18px] leading-none">{s.value}</p>
@@ -886,10 +864,9 @@ function TabPublish({ data, invId, onPublish, onUnpublish, onNext }) {
         </div>
       </div>
 
-      {/* Save all changes */}
       <button onClick={onNext}
         className="w-full py-2.5 rounded-xl text-[13.5px] font-semibold text-white transition-all duration-200 hover:-translate-y-px active:translate-y-0 flex items-center justify-center gap-2"
-        style={{ background: 'linear-gradient(135deg,#7c3aed,#4f46e5)', boxShadow: '0 4px 16px rgba(124,58,237,0.28)' }}>
+        style={{ background: 'linear-gradient(135deg,#d97706,#f59e0b)', boxShadow: '0 4px 16px rgba(217,119,6,0.28)' }}>
         Save Changes
       </button>
     </div>
@@ -900,7 +877,7 @@ function SaveBtn({ onNext, isLast }) {
   return (
     <button onClick={onNext}
       className="w-full py-2.5 rounded-xl text-[13.5px] font-semibold text-white transition-all duration-200 hover:-translate-y-px active:translate-y-0 flex items-center justify-center gap-2"
-      style={{ background: 'linear-gradient(135deg,#7c3aed,#4f46e5)', boxShadow: '0 4px 16px rgba(124,58,237,0.28)' }}>
+      style={{ background: 'linear-gradient(135deg,#d97706,#f59e0b)', boxShadow: '0 4px 16px rgba(217,119,6,0.28)' }}>
       {isLast
         ? 'Save'
         : <>Next <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></>
@@ -909,18 +886,17 @@ function SaveBtn({ onNext, isLast }) {
   )
 }
 
-// ── Main Component ─────────────────────────────────────────────────────────────
-export default function InvitationEditor() {
+export default function BirthdayEditor() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const [inv, setInv]       = useState(null)
-  const [activeTab, setTab] = useState('general')
-  const [saved,      setSaved]      = useState(false)
+  const [inv, setInv]         = useState(null)
+  const [activeTab, setTab]   = useState('general')
+  const [saved, setSaved]     = useState(false)
   const [previewVer, setPreviewVer] = useState(0)
 
   useEffect(() => {
-    const data = loadInvitation(id)
-    if (!data) { navigate('/weddings'); return }
+    const data = loadBirthday(id)
+    if (!data) { navigate('/birthdays'); return }
     setInv(data)
   }, [id, navigate])
 
@@ -931,16 +907,16 @@ export default function InvitationEditor() {
   }, [])
 
   const tabIds = TABS.map(t => t.id)
-  const PHOTO_FIELDS = ['coverPhoto', 'groomPhoto', 'bridePhoto']
+  const PHOTO_FIELDS = ['coverPhoto', 'personPhoto']
   const onChange = (field, val) => {
     setInv(prev => ({ ...prev, [field]: val }))
     setSaved(false)
-    if (PHOTO_FIELDS.includes(field)) savePhoto(id, field, val)
+    if (PHOTO_FIELDS.includes(field)) saveBdayPhoto(id, field, val)
   }
 
   const handleNext = () => {
     if (!inv) return
-    apiSaveInvitation(id, inv)
+    apiSaveBirthday(id, inv)
     setPreviewVer(v => v + 1)
     const idx = tabIds.indexOf(activeTab)
     if (idx < tabIds.length - 1) {
@@ -951,20 +927,13 @@ export default function InvitationEditor() {
     }
   }
 
-  const handlePublish = () => {
-    const updated = apiPublish(id)
-    if (updated) { setInv(updated); setPreviewVer(v => v + 1) }
-  }
-
-  const handleUnpublish = () => {
-    const updated = apiUnpublish(id)
-    if (updated) { setInv(updated); setPreviewVer(v => v + 1) }
-  }
+  const handlePublish   = () => { const u = apiPublishBday(id);   if (u) { setInv(u); setPreviewVer(v => v + 1) } }
+  const handleUnpublish = () => { const u = apiUnpublishBday(id); if (u) { setInv(u); setPreviewVer(v => v + 1) } }
 
   if (!inv) {
     return (
       <div className="min-h-screen bg-[#060412] flex items-center justify-center">
-        <div className="w-7 h-7 border border-purple-500/40 border-t-purple-500 rounded-full animate-spin" />
+        <div className="w-7 h-7 border border-amber-500/40 border-t-amber-500 rounded-full animate-spin" />
       </div>
     )
   }
@@ -972,19 +941,18 @@ export default function InvitationEditor() {
   return (
     <div className="h-screen bg-[#060412] text-white flex flex-col overflow-hidden">
 
-      {/* Header */}
       <header className="shrink-0 border-b border-white/[0.06] bg-[#060412]/90 backdrop-blur-xl">
         <div className="h-14 flex items-center justify-between px-5 gap-4">
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate('/weddings')}
+            <button onClick={() => navigate('/birthdays')}
               className="w-8 h-8 flex items-center justify-center rounded-xl text-white/40 hover:text-white/80 hover:bg-white/[0.07] transition-all duration-200">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M19 12H5M12 5l-7 7 7 7"/>
               </svg>
             </button>
             <div>
-              <p className="text-white font-semibold text-[14px] leading-tight">{inv.coupleName}</p>
-              <p className="text-white/35 text-[11px]">Wedding Invitation Editor</p>
+              <p className="text-white font-semibold text-[14px] leading-tight">{inv.eventTitle || inv.personName}</p>
+              <p className="text-white/35 text-[11px]">Birthday Invitation Editor</p>
             </div>
           </div>
           {saved && (
@@ -1000,18 +968,17 @@ export default function InvitationEditor() {
 
       <div className="flex flex-1 overflow-hidden">
 
-        {/* Tab sidebar */}
-        <div className="w-[180px] shrink-0 border-r border-white/[0.06] bg-white/[0.02] flex flex-col pt-3 pb-4 hidden sm:flex">
+        <div className="w-[180px] shrink-0 border-r border-white/[0.06] bg-white/[0.02] flex flex-col pt-3 pb-4 hidden sm:flex overflow-hidden">
           {TABS.map(tab => (
             <button key={tab.id} onClick={() => setTab(tab.id)}
               className="flex items-center gap-3 px-4 py-3 text-[13px] font-medium transition-all duration-200 text-left mx-2"
               style={activeTab === tab.id ? {
-                background: 'rgba(139,92,246,0.18)',
+                background: 'rgba(217,119,6,0.18)',
                 backdropFilter: 'blur(16px)',
                 WebkitBackdropFilter: 'blur(16px)',
-                border: '1px solid rgba(139,92,246,0.32)',
+                border: '1px solid rgba(217,119,6,0.32)',
                 borderRadius: '16px',
-                boxShadow: '0 4px 20px rgba(139,92,246,0.20), 0 1px 0 rgba(255,255,255,0.08) inset',
+                boxShadow: '0 4px 20px rgba(217,119,6,0.20), 0 1px 0 rgba(255,255,255,0.08) inset',
                 color: 'white',
               } : { borderRadius: '16px', color: 'rgba(255,255,255,0.45)' }}
               onMouseEnter={e => { if (activeTab !== tab.id) e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
@@ -1022,45 +989,42 @@ export default function InvitationEditor() {
           ))}
         </div>
 
-        {/* Mobile tab bar */}
         <div className="sm:hidden fixed bottom-0 left-0 right-0 z-20 flex border-t border-white/[0.07] bg-[#060412]/95 backdrop-blur-xl">
           {TABS.map(tab => (
             <button key={tab.id} onClick={() => setTab(tab.id)}
               className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[9px] font-semibold transition-colors duration-200
-                ${activeTab === tab.id ? 'text-purple-400' : 'text-white/30'}`}>
+                ${activeTab === tab.id ? 'text-amber-400' : 'text-white/30'}`}>
               <span className="text-[16px]">{tab.icon}</span>
               {tab.label}
             </button>
           ))}
         </div>
 
-        {/* Form area */}
         <div className="flex-1 overflow-y-auto p-5 sidebar-scroll pb-20 sm:pb-5">
           <div key={activeTab} className="max-w-xl" style={{ animation: 'tab-enter 0.22s cubic-bezier(0.23,1,0.32,1)' }}>
-            {activeTab === 'general' && <TabGeneral  data={inv} onChange={onChange} onNext={handleNext} isLast={false} />}
-            {activeTab === 'couple'  && <TabCouple   data={inv} onChange={onChange} onNext={handleNext} isLast={false} />}
-            {activeTab === 'events'  && <TabEvents   data={inv} onChange={onChange} onNext={handleNext} isLast={false} />}
-            {activeTab === 'story'   && <TabStory    data={inv} onChange={onChange} onNext={handleNext} isLast={false} />}
-            {activeTab === 'date'    && <TabDate     data={inv} onChange={onChange} onNext={handleNext} isLast={false} />}
-            {activeTab === 'gallery' && <TabGallery  invId={id} onNext={handleNext} isLast={false} />}
-            {activeTab === 'vendors' && <TabVendors  data={inv} onChange={onChange} onNext={handleNext} isLast={false} />}
-            {activeTab === 'publish' && <TabPublish  data={inv} invId={id} onPublish={handlePublish} onUnpublish={handleUnpublish} onNext={handleNext} />}
+            {activeTab === 'general'   && <TabGeneral   data={inv} onChange={onChange} onNext={handleNext} />}
+            {activeTab === 'person'    && <TabPerson    data={inv} onChange={onChange} onNext={handleNext} />}
+            {activeTab === 'events'    && <TabEvents    data={inv} onChange={onChange} onNext={handleNext} />}
+            {activeTab === 'memories'  && <TabMemories  data={inv} onChange={onChange} onNext={handleNext} />}
+            {activeTab === 'countdown' && <TabCountdown data={inv} onChange={onChange} onNext={handleNext} />}
+            {activeTab === 'gallery'   && <TabGallery   bdayId={id} onNext={handleNext} isLast={false} />}
+            {activeTab === 'vendors'   && <TabVendors   data={inv} onChange={onChange} onNext={handleNext} />}
+            {activeTab === 'publish'   && <TabPublish   data={inv} invId={id} onPublish={handlePublish} onUnpublish={handleUnpublish} onNext={handleNext} />}
           </div>
         </div>
 
-        {/* Phone preview panel — no outer scroll, everything centered */}
         <div className="hidden lg:flex w-[270px] shrink-0 border-l border-white/[0.06] flex-col items-center justify-center gap-4 bg-white/[0.01] overflow-hidden">
           <p className="text-white/30 text-[11px] tracking-widest uppercase text-center shrink-0">Live Preview</p>
           <PhonePreview id={id} version={previewVer} />
           <button
-            onClick={() => window.open(`/invite/${id}`, '_blank')}
+            onClick={() => window.open(`/birthday/${id}`, '_blank')}
             className="shrink-0 flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] font-semibold text-white/70 hover:text-white transition-all duration-200 hover:-translate-y-px active:translate-y-0"
             style={{
-              background: 'rgba(139,92,246,0.12)',
+              background: 'rgba(217,119,6,0.12)',
               backdropFilter: 'blur(12px)',
               WebkitBackdropFilter: 'blur(12px)',
-              border: '1px solid rgba(139,92,246,0.28)',
-              boxShadow: '0 2px 12px rgba(139,92,246,0.15)',
+              border: '1px solid rgba(217,119,6,0.28)',
+              boxShadow: '0 2px 12px rgba(217,119,6,0.15)',
             }}>
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>

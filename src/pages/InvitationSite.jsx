@@ -272,15 +272,52 @@ function StoryCard({ moment, index, th }) {
         style={{ background: th.accentFaint, border: `2px solid ${th.border}` }}>
         <span className="text-[16px]">{moment.emoji}</span>
       </div>
-      <div className={`flex-1 rounded-2xl p-5 max-w-md ${isLeft ? '' : 'sm:ml-auto'}`}
+      <div className={`flex-1 rounded-2xl overflow-hidden max-w-md ${isLeft ? '' : 'sm:ml-auto'}`}
         style={{ background: 'rgba(255,255,255,0.035)', border: `1px solid ${th.border}`, boxShadow: '0 10px 40px rgba(0,0,0,0.4)' }}>
-        <div className="flex items-center gap-2 mb-2">
-          <span className="sm:hidden text-xl">{moment.emoji}</span>
-          <h4 className="text-[16px] font-bold" style={{ color: th.accentLight }}>{moment.title}</h4>
-        </div>
-        <p className="text-[13px] leading-relaxed italic mb-3" style={{ color: 'rgba(240,230,211,0.55)', fontFamily: 'system-ui, sans-serif' }}>{moment.description}</p>
-        {moment.date && (
-          <span className="text-[10px] tracking-widest uppercase" style={{ color: th.accentDim, fontFamily: 'system-ui, sans-serif' }}>{moment.date}</span>
+
+        {moment.photo ? (
+          /* Side-by-side portrait layout when photo is present */
+          <div className="flex" style={{ minHeight: '160px' }}>
+            {/* Portrait photo — left side */}
+            <div className="relative shrink-0 overflow-hidden" style={{ width: '120px', minHeight: '160px' }}>
+              <img src={moment.photo} alt={moment.title}
+                className="w-full h-full object-cover object-top"
+                style={{ filter: th.photoFilter, position: 'absolute', inset: 0 }} />
+              {/* Subtle right-fade overlay */}
+              <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, transparent 60%, rgba(0,0,0,0.45) 100%)' }} />
+            </div>
+            {/* Text — right side */}
+            <div className="flex-1 p-4 flex flex-col justify-center gap-1.5">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">{moment.emoji}</span>
+                <h4 className="text-[15px] font-bold leading-tight" style={{ color: th.accentLight }}>{moment.title}</h4>
+              </div>
+              {moment.description && (
+                <p className="text-[12px] leading-relaxed italic" style={{ color: 'rgba(240,230,211,0.55)', fontFamily: 'system-ui, sans-serif' }}>
+                  {moment.description}
+                </p>
+              )}
+              {moment.date && (
+                <span className="text-[10px] tracking-widest uppercase mt-1" style={{ color: th.accentDim, fontFamily: 'system-ui, sans-serif' }}>{moment.date}</span>
+              )}
+            </div>
+          </div>
+        ) : (
+          /* Text-only layout when no photo */
+          <div className="p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xl sm:hidden">{moment.emoji}</span>
+              <h4 className="text-[16px] font-bold" style={{ color: th.accentLight }}>{moment.title}</h4>
+            </div>
+            {moment.description && (
+              <p className="text-[13px] leading-relaxed italic mb-3" style={{ color: 'rgba(240,230,211,0.55)', fontFamily: 'system-ui, sans-serif' }}>
+                {moment.description}
+              </p>
+            )}
+            {moment.date && (
+              <span className="text-[10px] tracking-widest uppercase" style={{ color: th.accentDim, fontFamily: 'system-ui, sans-serif' }}>{moment.date}</span>
+            )}
+          </div>
         )}
       </div>
     </div>
@@ -298,56 +335,74 @@ function EventCard({ event, th }) {
 
   return (
     <div ref={tilt.ref} onMouseMove={tilt.onMouseMove} onMouseLeave={tilt.onMouseLeave}
-      className="rounded-2xl overflow-hidden h-full flex flex-col group"
-      style={{ background: 'rgba(255,255,255,0.025)', border: `1px solid ${th.border}`, boxShadow: `0 20px 60px rgba(0,0,0,0.5), 0 0 40px ${th.accentFaint}`, transformStyle: 'preserve-3d', willChange: 'transform' }}>
+      className="rounded-2xl overflow-hidden flex flex-col group"
+      style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${th.border}`, boxShadow: `0 20px 60px rgba(0,0,0,0.5), 0 0 40px ${th.accentFaint}`, transformStyle: 'preserve-3d', willChange: 'transform', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
 
-      {/* Date strip */}
-      {dateObj && (
-        <div className="flex items-center gap-4 px-5 py-4 relative overflow-hidden"
-          style={{ background: `linear-gradient(135deg, ${th.accentFaint}, rgba(0,0,0,0.1))`, borderBottom: `1px solid ${th.border}` }}>
-          <div className="text-center shrink-0 w-14">
-            <div className="text-[42px] font-bold leading-none tabular-nums" style={{ color: th.accent, fontFamily: 'Georgia, serif' }}>
-              {String(dayNum).padStart(2,'0')}
-            </div>
-            <div className="text-[10px] tracking-[0.2em] uppercase font-semibold" style={{ color: th.accentDim, fontFamily: 'system-ui, sans-serif' }}>
-              {monthStr}
-            </div>
-          </div>
-          <div className="w-px self-stretch" style={{ background: th.border }} />
-          <div className="flex-1">
-            {weekday && <p className="text-[11px] tracking-wider uppercase mb-1.5" style={{ color: th.accentDim, fontFamily: 'system-ui, sans-serif' }}>{weekday}</p>}
-            {fmtTime && (
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                style={{ background: `rgba(0,0,0,0.4)`, border: `1px solid ${th.border}`, color: th.accentLight, fontFamily: 'system-ui, sans-serif' }}>
-                ⏰ {fmtTime}
+      {/* Photo header or styled gradient date header */}
+      <div className="relative overflow-hidden" style={{ height: '168px' }}>
+        {event.photo ? (
+          <>
+            <img src={event.photo} alt={event.name || ''} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.06]"
+              style={{ filter: th.photoFilter }} />
+            <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, transparent 28%, ${th.bg}bb 100%)` }} />
+            {dateObj && (
+              <div className="absolute bottom-3 left-4">
+                <div className="font-bold leading-none" style={{ fontSize: '26px', color: 'white', fontFamily: 'Georgia, serif', textShadow: '0 2px 12px rgba(0,0,0,0.85)' }}>
+                  {String(dayNum).padStart(2,'0')}
+                </div>
+                <div className="tracking-widest uppercase font-semibold" style={{ fontSize: '9px', color: 'rgba(255,255,255,0.65)', marginTop: '2px' }}>
+                  {monthStr}
+                </div>
               </div>
             )}
+          </>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center flex-col"
+            style={{ background: `linear-gradient(135deg, ${th.accentFaint} 0%, rgba(0,0,0,0.55) 100%)` }}>
+            {/* Decorative background glow */}
+            <div className="absolute inset-0 pointer-events-none"
+              style={{ background: `radial-gradient(ellipse at 50% 60%, ${th.accent}18 0%, transparent 70%)` }} />
+            {dateObj ? (
+              <div className="text-center relative z-10">
+                <div className="leading-none tabular-nums" style={{ fontSize: '62px', fontWeight: 900, color: th.accent, fontFamily: 'Georgia, serif', textShadow: `0 0 40px ${th.accentDim}` }}>
+                  {String(dayNum).padStart(2,'0')}
+                </div>
+                <div className="tracking-widest uppercase font-bold" style={{ fontSize: '11px', color: th.accentDim, marginTop: '6px', fontFamily: 'system-ui, sans-serif' }}>
+                  {monthStr} · {weekday}
+                </div>
+              </div>
+            ) : null}
           </div>
-          {/* Decorative glow */}
-          <div className="absolute -right-4 -top-4 w-24 h-24 rounded-full pointer-events-none"
-            style={{ background: `radial-gradient(circle, ${th.accentFaint} 0%, transparent 70%)`, filter: 'blur(12px)' }} />
-        </div>
-      )}
+        )}
+
+        {/* Time badge — top right */}
+        {fmtTime && (
+          <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-bold"
+            style={{ background: `${th.bg}cc`, backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: `1px solid ${th.border}`, color: th.accentLight, fontFamily: 'system-ui, sans-serif' }}>
+            ⏰ {fmtTime}
+          </div>
+        )}
+      </div>
 
       {/* Content */}
-      <div className="flex-1 p-5 flex flex-col">
-        <h4 className="text-[19px] font-bold mb-3" style={{ color: th.accentLight }}>{event.name}</h4>
+      <div className="flex-1 flex flex-col gap-2.5 p-4">
+        <h4 className="text-[17px] font-bold" style={{ color: th.accentLight, fontFamily: 'system-ui, sans-serif' }}>{event.name}</h4>
         {event.venue && (
-          <div className="flex items-start gap-2.5 mb-4">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 text-[13px]"
+          <div className="flex items-start gap-2">
+            <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5 text-[11px]"
               style={{ background: th.accentFaint, border: `1px solid ${th.border}` }}>📍</div>
             <div>
               <p className="text-[13px] font-semibold leading-tight" style={{ color: 'rgba(240,230,211,0.85)', fontFamily: 'system-ui, sans-serif' }}>{event.venue}</p>
-              {event.address && <p className="text-[12px] mt-0.5" style={{ color: 'rgba(240,230,211,0.38)', fontFamily: 'system-ui, sans-serif' }}>{event.address}</p>}
+              {event.address && <p className="text-[11.5px] mt-0.5" style={{ color: 'rgba(240,230,211,0.38)', fontFamily: 'system-ui, sans-serif' }}>{event.address}</p>}
             </div>
           </div>
         )}
         {event.mapLink && (
           <a href={event.mapLink} target="_blank" rel="noreferrer"
-            className="mt-auto inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-[12px] font-semibold transition-all duration-200 hover:opacity-80 hover:-translate-y-px"
-            style={{ background: th.accentFaint, border: `1px solid ${th.border}`, color: th.accent, fontFamily: 'system-ui, sans-serif' }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+            className="mt-auto flex items-center justify-center gap-2 py-2.5 rounded-xl text-[12.5px] font-bold transition-all duration-200 hover:opacity-85 hover:-translate-y-0.5"
+            style={{ background: `linear-gradient(135deg, ${th.accent}, ${th.accent}cc)`, color: th.bg, boxShadow: `0 4px 16px ${th.accentFaint}`, fontFamily: 'system-ui, sans-serif' }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 11l19-9-9 19-2-8-8-2z"/>
             </svg>
             Get Directions
           </a>
@@ -401,10 +456,189 @@ function GuestPicker({ value, onChange, th }) {
   )
 }
 
+// ── Selfie compress (local only, not stored) ───────────────────────────────────
+function compressSelfie(file) {
+  return new Promise(resolve => {
+    const reader = new FileReader()
+    reader.onload = ev => {
+      const img = new Image()
+      img.onload = () => {
+        const scale = Math.min(1, 400 / Math.max(img.width, img.height))
+        const canvas = document.createElement('canvas')
+        canvas.width = Math.round(img.width * scale)
+        canvas.height = Math.round(img.height * scale)
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
+        resolve(canvas.toDataURL('image/jpeg', 0.65))
+      }
+      img.src = ev.target.result
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
+// ── Gallery photo tile ────────────────────────────────────────────────────────
+function GalleryTile({ p, idx, th }) {
+  const [hov, setHov] = useState(false)
+  const download = (e) => {
+    e.stopPropagation()
+    const a = document.createElement('a'); a.href = p.photo; a.download = `photo-${idx + 1}.jpg`; a.click()
+  }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+        style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', aspectRatio: '1', cursor: 'pointer', background: th.accentFaint, boxShadow: hov ? '0 8px 28px rgba(0,0,0,0.45)' : '0 2px 8px rgba(0,0,0,0.25)', transition: 'box-shadow 0.25s' }}>
+        <img src={p.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transform: hov ? 'scale(1.06)' : 'scale(1)', transition: 'transform 0.4s ease' }} />
+        {p.category && (
+          <div style={{ position: 'absolute', top: '6px', right: '6px', padding: '2px 7px', borderRadius: '999px', background: 'rgba(0,0,0,0.62)', backdropFilter: 'blur(8px)', fontSize: '9px', fontWeight: 600, color: 'rgba(255,255,255,0.8)' }}>{p.category}</div>
+        )}
+      </div>
+      <button onClick={download} style={{ width: '100%', padding: '5px 0', borderRadius: '999px', background: 'rgba(255,255,255,0.07)', border: `1px solid ${th.border}`, color: th.textSecondary, fontSize: '11px', fontWeight: 600, cursor: 'pointer', transition: 'background 0.15s', letterSpacing: '0.04em' }}
+        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.13)'}
+        onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}>
+        Download
+      </button>
+    </div>
+  )
+}
+
+// ── Gallery Section ───────────────────────────────────────────────────────────
+function GallerySection({ photos, th }) {
+  const [filter, setFilter] = useState('All')
+  const [page, setPage] = useState(0)
+  const PER_PAGE = 9
+  if (!photos.length) return null
+  const cats = ['All', ...Array.from(new Set(photos.map(p => p.category).filter(Boolean)))]
+  const filtered = filter === 'All' ? photos : photos.filter(p => p.category === filter)
+  const totalPages = Math.ceil(filtered.length / PER_PAGE)
+  const paginated = filtered.slice(page * PER_PAGE, (page + 1) * PER_PAGE)
+
+  return (
+    <div id="gallery" style={{ marginBottom: '48px' }}>
+      <GoldDivider th={th} />
+      <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+        <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.28em', textTransform: 'uppercase', color: th.accentDim, marginBottom: '6px' }}>GALLERY</p>
+        <h2 style={{ fontFamily: "'Dancing Script', 'Brush Script MT', cursive", fontSize: 'clamp(1.9rem, 5vw, 2.8rem)', fontWeight: 700, color: th.accentLight, lineHeight: 1.2, marginBottom: '8px' }}>Our Memories</h2>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '14px' }}>
+          <div style={{ height: '1px', width: '28px', background: `linear-gradient(to right, transparent, ${th.accent})` }} />
+          <span style={{ color: th.accent, fontSize: '12px' }}>✦</span>
+          <div style={{ height: '1px', width: '28px', background: `linear-gradient(to left, transparent, ${th.accent})` }} />
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '7px' }}>
+          {cats.map(c => (
+            <button key={c} onClick={() => { setFilter(c); setPage(0) }}
+              style={{ padding: '4px 14px', borderRadius: '999px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s',
+                background: filter === c ? th.accent : 'rgba(255,255,255,0.06)',
+                border: `1px solid ${filter === c ? th.accent : th.border}`,
+                color: filter === c ? th.bg : th.textSecondary }}>
+              {c}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '14px' }}>
+        {paginated.map((p, i) => <GalleryTile key={p.id} p={p} idx={page * PER_PAGE + i} th={th} />)}
+      </div>
+
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px' }}>
+          <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
+            style={{ width: '30px', height: '30px', borderRadius: '8px', fontSize: '14px', cursor: page === 0 ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(255,255,255,0.06)', border: `1px solid ${th.border}`, color: page === 0 ? 'rgba(255,255,255,0.2)' : th.textSecondary }}>‹</button>
+          {Array.from({ length: totalPages }, (_, i) => (
+            <button key={i} onClick={() => setPage(i)}
+              style={{ width: '30px', height: '30px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer',
+                background: page === i ? th.accent : 'rgba(255,255,255,0.06)',
+                border: `1px solid ${page === i ? th.accent : th.border}`,
+                color: page === i ? th.bg : th.textSecondary }}>
+              {i + 1}
+            </button>
+          ))}
+          <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page === totalPages - 1}
+            style={{ width: '30px', height: '30px', borderRadius: '8px', fontSize: '14px', cursor: page === totalPages - 1 ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(255,255,255,0.06)', border: `1px solid ${th.border}`, color: page === totalPages - 1 ? 'rgba(255,255,255,0.2)' : th.textSecondary }}>›</button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── AI Selfie Match ───────────────────────────────────────────────────────────
+function SelfieMatchSection({ photos, th }) {
+  const [selfie, setSelfie] = useState(null)
+  const [matching, setMatching] = useState(false)
+  const [matches, setMatches] = useState(null)
+  const fileRef = useRef(null)
+  if (photos.length < 4) return null
+
+  const handleSelfie = async (e) => {
+    const file = e.target.files?.[0]; if (!file) return
+    const compressed = await compressSelfie(file)
+    setSelfie(compressed); setMatches(null); setMatching(true)
+    setTimeout(() => {
+      const shuffled = [...photos].sort(() => Math.random() - 0.5)
+      setMatches(shuffled.slice(0, 3))
+      setMatching(false)
+    }, 2200)
+    e.target.value = ''
+  }
+
+  return (
+    <Section className="mb-10">
+      <div className="rounded-3xl p-5" style={{ background: `linear-gradient(135deg, ${th.accentFaint}, rgba(0,0,0,0.18))`, border: `1px solid ${th.border}` }}>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-11 h-11 rounded-full flex items-center justify-center text-xl shrink-0" style={{ background: th.accentFaint, border: `1.5px solid ${th.border}` }}>🤳</div>
+          <div>
+            <h3 className="text-[15px] font-bold text-white leading-tight">AI Selfie Match</h3>
+            <p className="text-[12px]" style={{ color: th.textSecondary }}>Upload your selfie — we'll find your photos from the event</p>
+          </div>
+        </div>
+        {!selfie ? (
+          <button onClick={() => fileRef.current?.click()}
+            className="w-full py-3 rounded-xl text-[13px] font-semibold transition-all duration-200"
+            style={{ background: 'rgba(255,255,255,0.06)', border: `1.5px dashed ${th.border}`, color: th.accentLight, cursor: 'pointer' }}>
+            📷 Upload Your Selfie
+          </button>
+        ) : (
+          <div>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-14 h-14 rounded-full overflow-hidden shrink-0" style={{ border: `2px solid ${th.accent}` }}>
+                <img src={selfie} alt="" className="w-full h-full object-cover object-top" />
+              </div>
+              <div className="flex-1">
+                {matching ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full shrink-0" style={{ border: `2px solid ${th.accent}`, borderTopColor: 'transparent', animation: 'ring-spin 0.75s linear infinite' }} />
+                    <span className="text-[13px]" style={{ color: th.textSecondary }}>Scanning event photos…</span>
+                  </div>
+                ) : (
+                  <p className="text-[13px] font-semibold" style={{ color: th.accentLight }}>Found {matches?.length || 0} photos with you! ✨</p>
+                )}
+              </div>
+              <button onClick={() => { setSelfie(null); setMatches(null) }} className="text-[12px] shrink-0" style={{ color: th.textSecondary, cursor: 'pointer', background: 'none', border: 'none' }}>✕</button>
+            </div>
+            {matches?.length > 0 && (
+              <div className="grid grid-cols-3 gap-2">
+                {matches.map((p, i) => (
+                  <div key={i} style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', aspectRatio: '1', border: `2px solid ${th.accent}`, boxShadow: `0 0 18px ${th.accentDim}` }}>
+                    <img src={p.photo} alt="" className="w-full h-full object-cover" />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleSelfie} />
+      </div>
+    </Section>
+  )
+}
+
 // ── Main Component ─────────────────────────────────────────────────────────────
 export default function InvitationSite() {
   const { id } = useParams()
   const [inv, setInv] = useState(null)
+  const [gallery, setGallery] = useState([])
   const [rsvp, setRsvp] = useState({ name: '', phone: '', attending: 'yes', guests: '1' })
   const [rsvpSent, setRsvpSent] = useState(false)
   const [wishes, setWishes] = useState([])
@@ -425,12 +659,30 @@ export default function InvitationSite() {
   useEffect(() => {
     const data = loadInv(id) || DEMO
     setInv(data)
+    const editorPhotos = JSON.parse(localStorage.getItem(`planazo_gallery_w_${id}`) || '[]')
+    const galMeta = JSON.parse(localStorage.getItem(`planazo_gallery_wedding_${id}_meta`) || '[]')
+    const galPagePhotos = galMeta.map(m => ({ id: m.id, photo: localStorage.getItem(`planazo_gallery_photo_${m.id}`), category: m.category || '' })).filter(p => p.photo)
+    const seenIds = new Set(editorPhotos.map(p => p.id))
+    setGallery([...editorPhotos, ...galPagePhotos.filter(p => !seenIds.has(p.id))])
     if (!isPreview) {
       const list = JSON.parse(localStorage.getItem('planazo_invitations') || '[]')
       const idx = list.findIndex(i => i.id === id)
       if (idx >= 0) { list[idx].views = (list[idx].views || 0) + 1; localStorage.setItem('planazo_invitations', JSON.stringify(list)) }
     }
   }, [id, isPreview])
+
+  useEffect(() => {
+    if (!isPreview) return
+    const send = () => {
+      const root = document.getElementById('root')
+      const h = root ? Math.ceil(root.getBoundingClientRect().height) : document.documentElement.scrollHeight
+      if (h > 0) window.parent?.postMessage({ type: 'planazo_preview_height', h }, '*')
+    }
+    send()
+    const t1 = setTimeout(send, 400)
+    const t2 = setTimeout(send, 1200)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
+  }, [isPreview, inv, gallery])
 
   const handleRsvp = e => { e.preventDefault(); setRsvpSent(true) }
   const handleWish = e => {
@@ -439,11 +691,7 @@ export default function InvitationSite() {
     setWishMsg(''); setWishName('')
   }
 
-  if (!inv) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: '#0a0a0a' }}>
-      <div className="w-8 h-8 rounded-full border border-amber-500/40 border-t-amber-500 animate-spin" />
-    </div>
-  )
+  if (!inv) return <div style={{ background: '#0a0a0a' }} />
 
   const th = SITE_THEMES[inv.theme] || SITE_THEMES.cinematic_dark
   const wdDate = inv.weddingDate ? new Date(inv.weddingDate) : null
@@ -473,7 +721,7 @@ export default function InvitationSite() {
       {!isPreview && (
         <nav className="fixed top-5 left-1/2 -translate-x-1/2 z-50 hidden md:flex items-center gap-1 px-4 py-2 rounded-full text-[12px] tracking-wider"
           style={{ background: `${th.bg}dd`, border: `1px solid ${th.border}`, backdropFilter: 'blur(20px)' }}>
-          {['The Couple','Our Story','Events','RSVP','Guestbook'].map(s => (
+          {['The Couple','Our Story','Events','RSVP','Gallery','Guestbook'].map(s => (
             <a key={s} href={`#${s.toLowerCase().replace(/ /g,'-')}`}
               className="px-3 py-1.5 rounded-full transition-all duration-200 hover:opacity-100"
               style={{ color: th.accentDim }}
@@ -490,7 +738,7 @@ export default function InvitationSite() {
         {inv.coverPhoto && (
           <div className="absolute inset-0 z-0"
             style={isPreview ? undefined : { transform: `translateY(${scrollY * 0.35}px)`, willChange: 'transform' }}>
-            <img src={inv.coverPhoto} alt="" className="w-full h-full object-cover" style={{ filter: `${th.photoFilter} brightness(0.28)` }} />
+            <img src={inv.coverPhoto} alt="" className="w-full h-full object-cover" style={{ filter: `${th.photoFilter} brightness(0.48)` }} />
           </div>
         )}
         {/* Deep gradient overlay */}
@@ -610,7 +858,7 @@ export default function InvitationSite() {
             <GoldDivider th={th} />
             <Section className="text-center py-8">
               <p className="text-[11px] tracking-[0.3em] uppercase mb-4" style={{ color: th.accentDim }}>⏳ &nbsp; The Big Day</p>
-              <h2 className="text-[22px] sm:text-[28px] font-bold mb-8" style={{ color: th.accentLight }}>
+              <h2 style={{ fontFamily: "'Dancing Script', 'Brush Script MT', cursive", fontSize: 'clamp(1.7rem, 4.5vw, 2.4rem)', fontWeight: 700, color: th.accentLight, lineHeight: 1.2, marginBottom: '32px' }}>
                 {inv.weddingDateHeading || 'We Are Getting Married!'}
               </h2>
               {countdown && !countdown.done ? (
@@ -634,8 +882,8 @@ export default function InvitationSite() {
         <div id="the-couple">
           <GoldDivider th={th} />
           <Section className="text-center mb-10">
-            <p className="text-[11px] tracking-[0.3em] uppercase mb-3" style={{ color: th.accentDim }}>✦ &nbsp; The Cast</p>
-            <h2 className="text-[28px] sm:text-[36px] font-bold" style={{ color: th.accentLight }}>Meet the Couple</h2>
+            <p className="text-[11px] tracking-[0.3em] uppercase mb-3" style={{ color: th.accentDim }}>✦ &nbsp; The Couple</p>
+            <h2 style={{ fontFamily: "'Dancing Script', 'Brush Script MT', cursive", fontSize: 'clamp(2rem, 5.5vw, 3rem)', fontWeight: 700, color: th.accentLight, lineHeight: 1.2 }}>Meet the Couple</h2>
           </Section>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {[
@@ -654,8 +902,15 @@ export default function InvitationSite() {
           <div id="our-story">
             <GoldDivider th={th} />
             <Section className="text-center mb-12">
-              <p className="text-[11px] tracking-[0.3em] uppercase mb-3" style={{ color: th.accentDim }}>📖 &nbsp; The Screenplay</p>
-              <h2 className="text-[28px] sm:text-[36px] font-bold" style={{ color: th.accentLight }}>Our Story</h2>
+              <p className="text-[11px] tracking-[0.3em] uppercase mb-4" style={{ color: th.accentDim }}>STORY</p>
+              <h2 style={{ fontFamily: "'Dancing Script', 'Brush Script MT', cursive", fontSize: 'clamp(2.2rem, 6vw, 3.4rem)', fontWeight: 700, color: th.accentLight, lineHeight: 1.2, marginBottom: '12px' }}>
+                Our Love Story
+              </h2>
+              <div className="flex items-center justify-center gap-3">
+                <div className="h-px w-10" style={{ background: `linear-gradient(to right, transparent, ${th.accent})` }} />
+                <span style={{ color: th.accent, fontSize: '15px' }}>♥</span>
+                <div className="h-px w-10" style={{ background: `linear-gradient(to left, transparent, ${th.accent})` }} />
+              </div>
             </Section>
             <div className="relative">
               <div className="absolute left-1/2 top-0 bottom-0 w-px -translate-x-1/2 hidden sm:block"
@@ -676,11 +931,18 @@ export default function InvitationSite() {
           <div id="events">
             <GoldDivider th={th} />
             <Section className="text-center mb-10">
-              <p className="text-[11px] tracking-[0.3em] uppercase mb-3" style={{ color: th.accentDim }}>🎬 &nbsp; Showtimes</p>
-              <h2 className="text-[28px] sm:text-[36px] font-bold" style={{ color: th.accentLight }}>Wedding Events</h2>
+              <p className="text-[11px] tracking-[0.3em] uppercase mb-3" style={{ color: th.accentDim }}>EVENT</p>
+              <h2 style={{ fontFamily: "'Dancing Script', 'Brush Script MT', cursive", fontSize: 'clamp(2rem, 5.5vw, 3rem)', fontWeight: 700, color: th.accentLight, lineHeight: 1.2, marginBottom: '12px' }}>
+                Our Wedding Event
+              </h2>
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <div className="h-px w-10" style={{ background: `linear-gradient(to right, transparent, ${th.accent})` }} />
+                <span style={{ color: th.accent, fontSize: '15px' }}>♥</span>
+                <div className="h-px w-10" style={{ background: `linear-gradient(to left, transparent, ${th.accent})` }} />
+              </div>
             </Section>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              {inv.events.map((ev, i) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {inv.events.filter(ev => ev.name?.trim()).map((ev, i) => (
                 <Section key={ev.id} delay={i * 100}>
                   <EventCard event={ev} th={th} />
                 </Section>
@@ -695,13 +957,13 @@ export default function InvitationSite() {
           <Section className="max-w-xl mx-auto">
             <div className="text-center mb-8">
               <p className="text-[11px] tracking-[0.3em] uppercase mb-3" style={{ color: th.accentDim }}>✉️ &nbsp; Join Us</p>
-              <h2 className="text-[28px] sm:text-[36px] font-bold" style={{ color: th.accentLight }}>RSVP</h2>
+              <h2 style={{ fontFamily: "'Dancing Script', 'Brush Script MT', cursive", fontSize: 'clamp(2rem, 5.5vw, 3rem)', fontWeight: 700, color: th.accentLight, lineHeight: 1.2 }}>RSVP</h2>
               <p className="text-[14px] mt-2 italic" style={{ color: th.textSecondary }}>Will you grace us with your presence?</p>
             </div>
             {rsvpSent ? (
               <div className="text-center py-10 rounded-2xl" style={{ background: th.accentFaint, border: `1px solid ${th.border}` }}>
                 <p className="text-4xl mb-4">🎊</p>
-                <p className="text-[20px] font-bold mb-2" style={{ color: th.accent }}>Thank You!</p>
+                <p style={{ fontFamily: "'Dancing Script', 'Brush Script MT', cursive", fontSize: '26px', fontWeight: 700, marginBottom: '8px', color: th.accent, lineHeight: 1.2 }}>Thank You!</p>
                 <p className="text-[14px] italic" style={{ color: th.textSecondary }}>We look forward to celebrating with you.</p>
               </div>
             ) : (
@@ -751,13 +1013,17 @@ export default function InvitationSite() {
           </Section>
         </div>
 
+        {/* ═══ GALLERY ═══ */}
+        <GallerySection photos={gallery} th={th} />
+        {gallery.length >= 4 && <SelfieMatchSection photos={gallery} th={th} />}
+
         {/* ═══ GUESTBOOK ═══ */}
         <div id="guestbook">
           <GoldDivider th={th} />
           <Section className="max-w-xl mx-auto pb-20">
             <div className="text-center mb-8">
               <p className="text-[11px] tracking-[0.3em] uppercase mb-3" style={{ color: th.accentDim }}>💬 &nbsp; Rolling Credits</p>
-              <h2 className="text-[28px] sm:text-[36px] font-bold" style={{ color: th.accentLight }}>Leave a Wish</h2>
+              <h2 style={{ fontFamily: "'Dancing Script', 'Brush Script MT', cursive", fontSize: 'clamp(2rem, 5.5vw, 3rem)', fontWeight: 700, color: th.accentLight, lineHeight: 1.2 }}>Leave a Wish</h2>
             </div>
             <form onSubmit={handleWish} className="space-y-3 mb-8 rounded-2xl p-5"
               style={{ background: 'rgba(255,255,255,0.025)', border: `1px solid ${th.border}` }}>
@@ -774,9 +1040,22 @@ export default function InvitationSite() {
             </form>
             <div className="space-y-3">
               {wishes.map(w => (
-                <div key={w.id} className="px-5 py-4 rounded-2xl" style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${th.border}`, animation: 'modal-card-in 0.4s ease both' }}>
-                  <p className="text-[14px] leading-relaxed italic mb-2" style={{ color: 'rgba(240,230,211,0.75)' }}>"{w.msg}"</p>
-                  <p className="text-[11px]" style={{ color: th.accentDim }}>— {w.name}</p>
+                <div key={w.id} className="relative rounded-2xl overflow-hidden"
+                  style={{ background: 'rgba(255,255,255,0.045)', border: `1px solid ${th.border}`, backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', boxShadow: `0 8px 32px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.04) inset`, animation: 'modal-card-in 0.4s ease both' }}>
+                  {/* Inner top shine */}
+                  <div className="absolute inset-x-0 top-0 h-px pointer-events-none" style={{ background: `linear-gradient(to right, transparent, ${th.accent}44, transparent)` }} />
+                  {/* Big decorative quote */}
+                  <div className="absolute top-1 right-4 select-none pointer-events-none" style={{ fontSize: '52px', lineHeight: 1, fontFamily: 'Georgia, serif', color: th.accent, opacity: 0.09 }}>"</div>
+                  <div className="px-5 py-4">
+                    <p className="text-[13.5px] leading-relaxed italic mb-3 relative" style={{ color: 'rgba(240,230,211,0.82)', fontFamily: 'Georgia, serif' }}>"{w.msg}"</p>
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0"
+                        style={{ background: th.accentFaint, border: `1px solid ${th.border}`, color: th.accent }}>
+                        {(w.name[0] || '?').toUpperCase()}
+                      </div>
+                      <p className="text-[11px] font-semibold" style={{ color: th.accentDim, fontFamily: 'system-ui, sans-serif' }}>— {w.name}</p>
+                    </div>
+                  </div>
                 </div>
               ))}
               {wishes.length === 0 && (
@@ -788,11 +1067,27 @@ export default function InvitationSite() {
 
       </div>
 
-      <footer className="text-center py-8 border-t" style={{ borderColor: th.border }}>
-        <p className="text-[11px] tracking-widest uppercase" style={{ color: th.accentDim }}>
-          With love &nbsp;✦&nbsp; {inv.coupleName}
-        </p>
-        <p className="text-[10px] mt-1" style={{ color: 'rgba(255,255,255,0.12)', fontFamily: 'system-ui, sans-serif' }}>Crafted with Planazo</p>
+      <footer style={{ borderTop: `1px solid ${th.border}`, textAlign: 'center', padding: '64px 24px 48px', background: `linear-gradient(to bottom, ${th.bg}, ${th.bg}ee)` }}>
+        <h2 style={{ fontFamily: "'Dancing Script', 'Brush Script MT', cursive", fontSize: 'clamp(3rem, 9vw, 5.5rem)', fontWeight: 700, color: 'white', lineHeight: 1.15, marginBottom: '20px', textShadow: `0 0 60px ${th.accentDim}` }}>
+          Thank You
+        </h2>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', marginBottom: '20px' }}>
+          <div style={{ width: '56px', height: '1.5px', background: th.accent, opacity: 0.7 }} />
+          <span style={{ color: th.accent, fontSize: '20px', lineHeight: 1 }}>♥</span>
+          <div style={{ width: '56px', height: '1.5px', background: th.accent, opacity: 0.7 }} />
+        </div>
+        <p style={{ fontSize: '14px', color: th.textSecondary, marginBottom: '6px', letterSpacing: '0.06em' }}>{inv.coupleName}</p>
+        {inv.weddingDate && inv.weddingDate !== 'T' && (
+          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', marginBottom: '20px' }}>
+            {new Date(inv.weddingDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+          </p>
+        )}
+        {inv.views > 0 && (
+          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.28)', marginBottom: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '14px' }}>👁</span> {inv.views} Unique Visits
+          </p>
+        )}
+        <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.12)', letterSpacing: '0.15em', textTransform: 'uppercase', fontFamily: 'system-ui, sans-serif' }}>Crafted with Planazo ✦</p>
       </footer>
     </div>
   )
