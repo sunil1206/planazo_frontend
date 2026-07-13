@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import logo from '../assets/logo.png'
 
 // ── Image compression ─────────────────────────────────────────────────────────
-function compressImage(file, maxPx = 900, quality = 0.72) {
+function compressImage(file, maxPx = 800, quality = 0.68) {
   return new Promise(resolve => {
     const reader = new FileReader()
     reader.onload = ev => {
@@ -22,13 +22,25 @@ function compressImage(file, maxPx = 900, quality = 0.72) {
   })
 }
 
+// ── Gallery storage ───────────────────────────────────────────────────────────
+function saveGallery(invId, photos) {
+  try { localStorage.setItem(`planazo_gallery_w_${invId}`, JSON.stringify(photos)) }
+  catch(e) { alert('Storage full — delete some gallery photos to free space.') }
+}
+function loadGallery(invId) {
+  return JSON.parse(localStorage.getItem(`planazo_gallery_w_${invId}`) || '[]')
+}
+
 // ── Mock API ──────────────────────────────────────────────────────────────────
 // Photos are stored in separate keys to avoid blowing the 5MB localStorage quota.
 const PHOTO_KEYS = ['coverPhoto', 'groomPhoto', 'bridePhoto']
 
 function savePhoto(invId, key, dataUrl) {
   try { localStorage.setItem(`planazo_photo_${invId}_${key}`, dataUrl || '') }
-  catch (e) { console.warn('Photo storage failed:', e) }
+  catch (e) {
+    console.error('Photo storage failed (quota exceeded):', e)
+    alert('Storage full — please delete some photos from other events to free up space.')
+  }
 }
 
 function loadPhotos(id) {
@@ -77,6 +89,7 @@ const TABS = [
   { id: 'events',  label: 'Events',     icon: '🗓️' },
   { id: 'story',   label: 'Our Story',  icon: '📖' },
   { id: 'date',    label: 'Date',       icon: '⏳' },
+  { id: 'gallery', label: 'Gallery',    icon: '🖼️' },
   { id: 'vendors', label: 'Vendors',    icon: '🤝' },
   { id: 'publish', label: 'Publish',    icon: '🚀' },
 ]
@@ -242,21 +255,31 @@ function TimePicker({ value, onChange, placeholder = 'Select time' }) {
 }
 
 // ── Phone Preview ──────────────────────────────────────────────────────────────
-// Scale a 390px-wide iframe to fill the 210px phone frame content area
-const PREVIEW_SCALE = 210 / 390           // ≈ 0.5385
-const IFRAME_CONTENT_H = 5000             // tall enough for full site
-const WRAPPER_H = Math.round(IFRAME_CONTENT_H * PREVIEW_SCALE)  // ≈ 2692px
+const PREVIEW_SCALE = 210 / 390  // ≈ 0.5385
 
 function PhonePreview({ id, version }) {
   const [loaded, setLoaded] = useState(false)
+  const [iframeH, setIframeH] = useState(6000)
+
+  useEffect(() => { setLoaded(false); setIframeH(6000) }, [version])
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.data?.type === 'planazo_preview_height' && e.data.h > 50) {
+        setIframeH(e.data.h + 80)
+      }
+    }
+    window.addEventListener('message', handler)
+    return () => window.removeEventListener('message', handler)
+  }, [])
+
   if (!id) return null
+  const wrapperH = Math.round(iframeH * PREVIEW_SCALE)
   return (
     <div className="phone-frame">
       <div className="phone-notch" />
-      {/* phone-screen is overflow-y:auto — the wrapper gives it scrollable height */}
       <div className="phone-screen">
-        <div style={{ width: '210px', height: WRAPPER_H + 'px', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
-          {/* Loading shimmer */}
+        <div style={{ width: '210px', height: wrapperH + 'px', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
           {!loaded && (
             <div className="absolute inset-0 flex items-center justify-center" style={{ background: '#0a0a0a' }}>
               <div className="w-5 h-5 rounded-full border border-purple-500/30 border-t-purple-400 animate-spin" />
@@ -269,12 +292,12 @@ function PhonePreview({ id, version }) {
             onLoad={() => setLoaded(true)}
             style={{
               width: '390px',
-              height: IFRAME_CONTENT_H + 'px',
+              height: iframeH + 'px',
               border: 'none',
               display: 'block',
               transform: `scale(${PREVIEW_SCALE})`,
               transformOrigin: 'top left',
-              pointerEvents: 'none',  // outer phone-screen handles scroll
+              pointerEvents: 'none',
             }}
           />
         </div>
@@ -298,18 +321,20 @@ function PersonSection({ prefix, title, emoji, data, onChange }) {
         <span>{emoji}</span>
         <h3 className="text-white font-semibold text-[14px]">{title}</h3>
       </div>
-      <div onClick={() => photoRef.current?.click()}
-        className="h-24 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-all duration-200 hover:bg-white/[0.055] overflow-hidden relative"
-        style={{ background: 'rgba(255,255,255,0.03)', border: '1.5px dashed rgba(255,255,255,0.12)' }}>
-        {photo
-          ? <img src={photo} alt="" className="w-full h-full object-cover" />
-          : <>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-              </svg>
-              <p className="text-white/30 text-[11px]">Upload photo</p>
-            </>
-        }
+      <div className="flex justify-center">
+        <div onClick={() => photoRef.current?.click()}
+          className="rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-all duration-200 hover:bg-white/[0.055] overflow-hidden relative"
+          style={{ width: '180px', height: '250px', background: 'rgba(255,255,255,0.03)', border: '1.5px dashed rgba(255,255,255,0.12)' }}>
+          {photo
+            ? <img src={photo} alt="" className="w-full h-full object-cover object-top" />
+            : <>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <p className="text-white/30 text-[11px]">Upload photo</p>
+              </>
+          }
+        </div>
       </div>
       <input ref={photoRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
       <div className="field-group">
@@ -333,7 +358,7 @@ function TabGeneral({ data, onChange, onNext, isLast }) {
   const coverRef = useRef(null)
   const handleCoverUpload = async (e) => {
     const file = e.target.files?.[0]; if (!file) return
-    const compressed = await compressImage(file, 1200, 0.78)
+    const compressed = await compressImage(file, 900, 0.72)
     onChange('coverPhoto', compressed)
   }
   const THEMES = [
@@ -361,18 +386,20 @@ function TabGeneral({ data, onChange, onNext, isLast }) {
       </div>
       <div className="field-group">
         <label className="field-label">Cover Photo</label>
-        <div onClick={() => coverRef.current?.click()}
-          className="h-28 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-all duration-200 hover:bg-white/[0.055] overflow-hidden relative"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1.5px dashed rgba(255,255,255,0.15)' }}>
-          {data.coverPhoto
-            ? <img src={data.coverPhoto} alt="" className="w-full h-full object-cover" />
-            : <>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-                </svg>
-                <p className="text-white/30 text-[12px]">Click to upload cover photo</p>
-              </>
-          }
+        <div className="flex justify-center">
+          <div onClick={() => coverRef.current?.click()}
+            className="rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-all duration-200 hover:bg-white/[0.055] overflow-hidden relative"
+            style={{ width: '200px', height: '280px', background: 'rgba(255,255,255,0.03)', border: '1.5px dashed rgba(255,255,255,0.15)' }}>
+            {data.coverPhoto
+              ? <img src={data.coverPhoto} alt="" className="w-full h-full object-cover object-top" />
+              : <>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>
+                  <p className="text-white/30 text-[12px]">Click to upload cover photo</p>
+                </>
+            }
+          </div>
         </div>
         <input ref={coverRef} type="file" accept="image/*" className="hidden" onChange={handleCoverUpload} />
       </div>
@@ -461,13 +488,20 @@ function TabEvents({ data, onChange, onNext, isLast }) {
 
 function TabStory({ data, onChange, onNext, isLast }) {
   const [adding, setAdding] = useState(false)
-  const [draft, setDraft]   = useState({ emoji: '✨', title: '', description: '', date: '' })
+  const [draft, setDraft]   = useState({ emoji: '✨', title: '', description: '', date: '', photo: null })
+  const imgRef = useRef(null)
   const moments = data.story || []
+
+  const handleMomentPhoto = async (e) => {
+    const file = e.target.files?.[0]; if (!file) return
+    const compressed = await compressImage(file, 500, 0.65)
+    setDraft(d => ({ ...d, photo: compressed }))
+  }
 
   const submitDraft = () => {
     if (!draft.title.trim()) return
     onChange('story', [...moments, { ...draft, id: Date.now() }])
-    setDraft({ emoji: '✨', title: '', description: '', date: '' })
+    setDraft({ emoji: '✨', title: '', description: '', date: '', photo: null })
     setAdding(false)
   }
   const remove = (id) => onChange('story', moments.filter(m => m.id !== id))
@@ -510,6 +544,11 @@ function TabStory({ data, onChange, onNext, isLast }) {
                       </p>
                     )}
                     {m.description && <p className="text-white/50 text-[12.5px] mt-1.5 leading-relaxed">{m.description}</p>}
+                    {m.photo && (
+                      <div className="mt-2 rounded-lg overflow-hidden" style={{ width: '80px', height: '60px' }}>
+                        <img src={m.photo} alt="" className="w-full h-full object-cover" />
+                      </div>
+                    )}
                   </div>
                   <button onClick={() => remove(m.id)} className="text-white/20 hover:text-rose-400 transition-colors mt-0.5 shrink-0">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -545,13 +584,46 @@ function TabStory({ data, onChange, onNext, isLast }) {
             <textarea className="glass-input resize-none" rows={3} placeholder="Tell the story behind this moment…"
               value={draft.description} onChange={e => setDraft(d => ({ ...d, description: e.target.value }))} />
           </div>
+          <div className="field-group">
+            <label className="field-label">
+              Photo <span className="text-white/30 normal-case font-normal ml-1">(optional)</span>
+            </label>
+            <div className="flex justify-center">
+            <div onClick={() => imgRef.current?.click()}
+              className="rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-all duration-200 hover:bg-white/[0.055] overflow-hidden relative"
+              style={{ width: '160px', height: '220px', background: 'rgba(255,255,255,0.03)', border: '1.5px dashed rgba(255,255,255,0.12)' }}>
+              {draft.photo
+                ? <>
+                    <img src={draft.photo} alt="" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+                      style={{ background: 'rgba(0,0,0,0.45)' }}>
+                      <span className="text-white/80 text-[12px] font-semibold">Click to change</span>
+                    </div>
+                  </>
+                : <>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    <p className="text-white/30 text-[11px]">Upload a photo for this moment</p>
+                  </>
+              }
+            </div>
+            </div>
+            <input ref={imgRef} type="file" accept="image/*" className="hidden" onChange={handleMomentPhoto} />
+            {draft.photo && (
+              <button onClick={() => setDraft(d => ({ ...d, photo: null }))}
+                className="text-[11px] text-white/30 hover:text-rose-400 transition-colors mt-1 text-right w-full">
+                Remove photo
+              </button>
+            )}
+          </div>
           <div className="flex items-center gap-2.5">
             <button onClick={submitDraft} disabled={!draft.title.trim()}
               className="px-5 py-2 rounded-full text-[13px] font-semibold text-white transition-all duration-200 disabled:opacity-40"
               style={{ background: 'linear-gradient(135deg,#7c3aed,#4f46e5)', boxShadow: '0 4px 12px rgba(124,58,237,0.30)' }}>
               Add Story
             </button>
-            <button onClick={() => { setAdding(false); setDraft({ emoji: '✨', title: '', description: '', date: '' }) }}
+            <button onClick={() => { setAdding(false); setDraft({ emoji: '✨', title: '', description: '', date: '', photo: null }) }}
               className="px-5 py-2 rounded-full text-[13px] font-semibold text-white/50 hover:text-white bg-white/[0.05] hover:bg-white/[0.09] border border-white/[0.09] transition-all duration-200">
               Cancel
             </button>
@@ -658,6 +730,86 @@ function TabVendors({ data, onChange, onNext, isLast }) {
             </div>
           ))}
         </div>
+      )}
+      <SaveBtn onNext={onNext} isLast={isLast} />
+    </div>
+  )
+}
+
+function TabGallery({ invId, onNext, isLast }) {
+  const [photos, setPhotos] = useState(() => loadGallery(invId))
+  const [category, setCategory] = useState('Ceremony')
+  const fileRef = useRef(null)
+  const CATS = ['Ceremony', 'Reception', 'Mehndi', 'Sangeet', 'Couple', 'Group']
+
+  const handleUpload = async (e) => {
+    const files = Array.from(e.target.files || [])
+    let current = photos
+    for (const file of files) {
+      const compressed = await compressImage(file, 600, 0.70)
+      current = [...current, { id: Date.now() + Math.random(), photo: compressed, category }]
+    }
+    setPhotos(current)
+    saveGallery(invId, current)
+    e.target.value = ''
+  }
+
+  const remove = (photoId) => {
+    const updated = photos.filter(p => p.id !== photoId)
+    setPhotos(updated)
+    saveGallery(invId, updated)
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center gap-3 pb-3 border-b border-white/[0.07]">
+        <div className="w-9 h-9 rounded-full flex items-center justify-center text-lg shrink-0"
+          style={{ background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.22)' }}>🖼️</div>
+        <div>
+          <h3 className="text-white font-semibold text-[15px]">Event Gallery</h3>
+          <p className="text-white/40 text-[12px]">Upload event photos for guests to browse & download</p>
+        </div>
+      </div>
+      <div className="field-group">
+        <label className="field-label">Category for next upload</label>
+        <div className="flex flex-wrap gap-2 mt-1">
+          {CATS.map(c => (
+            <button key={c} type="button" onClick={() => setCategory(c)}
+              className={`px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all duration-150 border
+                ${category === c ? 'bg-purple-500/20 text-purple-300 border-purple-500/40' : 'bg-white/[0.04] text-white/40 border-white/[0.08] hover:border-white/20'}`}>
+              {c}
+            </button>
+          ))}
+        </div>
+      </div>
+      <button type="button" onClick={() => fileRef.current?.click()}
+        className="w-full py-3 rounded-xl text-[13px] font-semibold text-purple-400 hover:text-purple-300 transition-colors duration-200"
+        style={{ background: 'rgba(124,58,237,0.07)', border: '1.5px dashed rgba(124,58,237,0.30)' }}>
+        + Upload Photos ({category})
+      </button>
+      <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleUpload} />
+      {photos.length > 0 ? (
+        <div style={{ maxWidth: '420px', margin: '0 auto' }}>
+          <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.28)', marginBottom: '10px', textAlign: 'center' }}>
+            {photos.length} {photos.length === 1 ? 'PHOTO' : 'PHOTOS'}
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+            {photos.map(p => (
+              <div key={p.id} className="relative group rounded-xl overflow-hidden" style={{ aspectRatio: '1' }}>
+                <img src={p.photo} alt="" className="w-full h-full object-cover" />
+                <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white"
+                  style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)' }}>{p.category}</div>
+                <button onClick={() => remove(p.id)}
+                  className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  style={{ background: 'rgba(239,68,68,0.90)' }}>
+                  <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="text-center py-8 text-white/25 text-[13px] italic">No photos uploaded yet. Start building your gallery!</div>
       )}
       <SaveBtn onNext={onNext} isLast={isLast} />
     </div>
@@ -772,8 +924,19 @@ export default function InvitationEditor() {
     setInv(data)
   }, [id, navigate])
 
+  useEffect(() => {
+    const onVisible = () => { if (!document.hidden) setPreviewVer(v => v + 1) }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [])
+
   const tabIds = TABS.map(t => t.id)
-  const onChange = (field, val) => { setInv(prev => ({ ...prev, [field]: val })); setSaved(false) }
+  const PHOTO_FIELDS = ['coverPhoto', 'groomPhoto', 'bridePhoto']
+  const onChange = (field, val) => {
+    setInv(prev => ({ ...prev, [field]: val }))
+    setSaved(false)
+    if (PHOTO_FIELDS.includes(field)) savePhoto(id, field, val)
+  }
 
   const handleNext = () => {
     if (!inv) return
@@ -879,6 +1042,7 @@ export default function InvitationEditor() {
             {activeTab === 'events'  && <TabEvents   data={inv} onChange={onChange} onNext={handleNext} isLast={false} />}
             {activeTab === 'story'   && <TabStory    data={inv} onChange={onChange} onNext={handleNext} isLast={false} />}
             {activeTab === 'date'    && <TabDate     data={inv} onChange={onChange} onNext={handleNext} isLast={false} />}
+            {activeTab === 'gallery' && <TabGallery  invId={id} onNext={handleNext} isLast={false} />}
             {activeTab === 'vendors' && <TabVendors  data={inv} onChange={onChange} onNext={handleNext} isLast={false} />}
             {activeTab === 'publish' && <TabPublish  data={inv} invId={id} onPublish={handlePublish} onUnpublish={handleUnpublish} onNext={handleNext} />}
           </div>
