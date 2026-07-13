@@ -9,6 +9,8 @@ import Birthdays        from './pages/Birthdays'
 import Gallery          from './pages/Gallery'
 import InvitationEditor from './pages/InvitationEditor'
 import InvitationSite   from './pages/InvitationSite'
+import BirthdayEditor   from './pages/BirthdayEditor'
+import BirthdaySite     from './pages/BirthdaySite'
 
 function App() {
   return (
@@ -22,8 +24,10 @@ function App() {
         <Route path="/weddings"            element={<Weddings />} />
         <Route path="/birthdays"           element={<Birthdays />} />
         <Route path="/gallery"             element={<Gallery />} />
-        <Route path="/weddings/editor/:id" element={<InvitationEditor />} />
-        <Route path="/invite/:id"          element={<InvitationSite />} />
+        <Route path="/weddings/editor/:id"  element={<InvitationEditor />} />
+        <Route path="/invite/:id"           element={<InvitationSite />} />
+        <Route path="/birthdays/editor/:id" element={<BirthdayEditor />} />
+        <Route path="/birthday/:id"         element={<BirthdaySite />} />
       </Routes>
     </BrowserRouter>
   )
