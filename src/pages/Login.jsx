@@ -1,6 +1,62 @@
-﻿import { useState, useRef, useEffect } from 'react'
+﻿import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import logo from '../assets/logo.png'
+import { useAuth } from '../context/useAuth'
+import { getErrorMessage } from '../lib/api'
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
+
+// google.accounts.id.initialize() must run at most once per page load (Google
+// warns/misbehaves — extra origin-check 403s — if it's called again), but
+// StrictMode's mount→cleanup→mount would otherwise call it twice since a
+// successful init has nothing to clean up. Module-level guards make the
+// "only once" rule survive that, plus any real remount of this component.
+let googleIdInitialized = false
+let currentCredentialHandler = null
+
+// Loads Google's gsi/client script (declared in index.html) before we try to use it.
+function useGoogleIdentityServices(onCredential) {
+  const buttonHostRef = useRef(null)
+
+  useEffect(() => {
+    currentCredentialHandler = onCredential
+    return () => { if (currentCredentialHandler === onCredential) currentCredentialHandler = null }
+  })
+
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) return
+    let cancelled = false
+
+    function init() {
+      if (cancelled || !window.google?.accounts?.id || !buttonHostRef.current) return false
+      if (!googleIdInitialized) {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: (response) => currentCredentialHandler?.(response.credential),
+        })
+        googleIdInitialized = true
+      }
+      // Real Google button rendered off-screen — our own custom-styled button
+      // triggers a click on it, so we never touch its required branding/markup.
+      window.google.accounts.id.renderButton(buttonHostRef.current, { type: 'standard' })
+      return true
+    }
+
+    if (!init()) {
+      const id = setInterval(() => { if (init()) clearInterval(id) }, 200)
+      return () => { cancelled = true; clearInterval(id) }
+    }
+  }, [])
+
+  const trigger = useCallback(() => {
+    const realButton = buttonHostRef.current?.querySelector('div[role="button"]')
+    if (!realButton) return false
+    realButton.click()
+    return true
+  }, [])
+
+  return { buttonHostRef, trigger }
+}
 
 // ── Prevent browser autofill while keeping click-to-suggest behaviour ────────
 // Sets readOnly on mount (blocks autofill); removes it on first focus so the
@@ -9,38 +65,6 @@ function usePreventAutofill() {
   const [ready, setReady] = useState(false)
   return { readOnly: !ready, onFocus: () => setReady(true) }
 }
-
-// ── Mock API (replace with real endpoints once available) ─────────────────────
-const delay = ms => new Promise(r => setTimeout(r, ms))
-
-async function apiLogin({ email, password }) {
-  await delay(1800)
-  if (email === 'sunilma94@gmail.com' && password === 'admin') return { token: 'mock_jwt_abc123' }
-  throw new Error('Invalid email or password')
-}
-
-async function apiSignup({ email, password }) {
-  await delay(2000)
-  if (email && password.length >= 8) return { message: 'Account created!' }
-  throw new Error('Password must be at least 8 characters')
-}
-
-async function apiGoogleAuth() {
-  await delay(1500)
-  return { token: 'google_mock_xyz789' }
-}
-
-// Replace with real endpoint: GET /api/users/role?email=... → { userType: 'user' | 'vendor' | 'gift_seller' }
-async function apiFetchUserRole(email) {
-  await delay(900)
-  const mockRoles = {
-    'sunilma94@gmail.com': 'user',
-    'vendor@planazo.com':  'vendor',
-    'gifts@planazo.com':   'gift_seller',
-  }
-  return mockRoles[email.toLowerCase()] ?? null
-}
-// ─────────────────────────────────────────────────────────────────────────────
 
 const USER_TYPES = [
   { value: 'user',        label: 'User',        desc: 'Planning an event' },
@@ -147,6 +171,7 @@ function RoleChip({ role, onNavigate }) {
 // ── Main component ────────────────────────────────────────────────────────────
 export default function Login() {
   const navigate = useNavigate()
+  const { login, register, loginWithGoogle } = useAuth()
   const [flipped, setFlipped] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
@@ -157,17 +182,20 @@ export default function Login() {
   const [loginPwd, setLoginPwd]         = useState('')
   const [showLoginPwd, setShowLoginPwd] = useState(false)
   const [loginUserType, setLoginUserType] = useState('')
-  const [roleFetching, setRoleFetching]   = useState(false)
+  // Always false now — no backend endpoint exists to auto-detect role by email (see handleEmailBlur).
+  const [roleFetching]                    = useState(false)
   const loginEmailAF   = usePreventAutofill()
   const loginPwdAF     = usePreventAutofill()
 
   // Signup form
+  const [signupFullName, setSignupFullName] = useState('')
   const [signupEmail, setSignupEmail]       = useState('')
   const [signupPwd, setSignupPwd]           = useState('')
   const [signupConfirm, setSignupConfirm]   = useState('')
   const [showSignupPwd, setShowSignupPwd]   = useState(false)
   const [showConfirmPwd, setShowConfirmPwd] = useState(false)
   const [signupUserType, setSignupUserType] = useState('')
+  const signupNameAF    = usePreventAutofill()
   const signupEmailAF   = usePreventAutofill()
   const signupPwdAF     = usePreventAutofill()
   const signupConfirmAF = usePreventAutofill()
@@ -182,35 +210,19 @@ export default function Login() {
 
   const flip = (toSignup) => { setError(''); setSuccess(''); setFlipped(toSignup) }
 
-  const saveUser = (email, userType, name = 'Sunil Ma') =>
-    localStorage.setItem('planazo_user', JSON.stringify({ name, email, userType }))
-
-  // Auto-fetch user role on email blur (login form only — existing user detection)
-  const handleEmailBlur = async () => {
-    const email = loginEmail.trim()
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return
-    if (loginUserType) return
-    setRoleFetching(true)
-    try {
-      const role = await apiFetchUserRole(email)
-      if (role) setLoginUserType(role)
-    } catch {
-      // silently ignore — user can select manually via /select-role
-    } finally {
-      setRoleFetching(false)
-    }
-  }
+  // Backend has no public "look up role by email" endpoint (it would leak account
+  // existence pre-auth), so this can no longer auto-detect — user selects manually.
+  const handleEmailBlur = () => {}
 
   const handleLogin = async () => {
     setError('')
     if (!loginUserType) { setError('Please select your account type to continue'); return }
     setLoading(true)
     try {
-      await apiLogin({ email: loginEmail, password: loginPwd })
-      saveUser(loginEmail, loginUserType)
+      await login(loginEmail, loginPwd, loginUserType)
       navigate('/home')
     } catch (err) {
-      setError(err.message)
+      setError(getErrorMessage(err, 'Invalid email or password'))
       setLoading(false)
     }
   }
@@ -218,30 +230,39 @@ export default function Login() {
   const handleSignup = async () => {
     setError('')
     if (!signupUserType) { setError('Please select your account type to continue'); return }
+    if (!signupFullName.trim()) { setError('Please enter your full name'); return }
     if (signupPwd !== signupConfirm) { setError('Passwords do not match'); return }
     setLoading(true)
     try {
-      await apiSignup({ email: signupEmail, password: signupPwd })
-      setSuccess('Account created! You can now sign in.')
-      flip(false)
+      await register(signupEmail, signupPwd, signupFullName.trim(), signupUserType)
+      navigate('/home')
     } catch (err) {
-      setError(err.message)
+      setError(getErrorMessage(err, 'Could not create account'))
     } finally {
       setLoading(false)
     }
   }
 
-  const handleGoogle = async () => {
+  const handleGoogleCredential = async (idToken) => {
     setError('')
-    if (!loginUserType) { setError('Please select your account type to continue'); return }
     setLoading(true)
     try {
-      await apiGoogleAuth()
-      saveUser('google@planazo.com', loginUserType, 'Google User')
+      await loginWithGoogle(idToken, loginUserType)
       navigate('/home')
     } catch (err) {
-      setError(err.message)
+      setError(getErrorMessage(err, 'Google sign-in failed'))
+    } finally {
       setLoading(false)
+    }
+  }
+
+  const { buttonHostRef: googleButtonHostRef, trigger: triggerGoogle } = useGoogleIdentityServices(handleGoogleCredential)
+
+  const handleGoogle = () => {
+    setError('')
+    if (!loginUserType) { setError('Please select your account type to continue'); return }
+    if (!GOOGLE_CLIENT_ID || !triggerGoogle()) {
+      setError('Google sign-in is still loading — please try again in a moment.')
     }
   }
 
@@ -363,6 +384,9 @@ export default function Login() {
                 <GoogleIcon />
                 <span>Sign in with Google</span>
               </button>
+              {/* Real Google-rendered button, kept off-screen — handleGoogle() clicks it programmatically. */}
+              <div ref={googleButtonHostRef} aria-hidden="true"
+                style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }} />
 
               <p className="text-center text-white/35 text-[12px] mt-2.5 sm:mt-4">
                 Don&apos;t have an account?{' '}
@@ -402,6 +426,22 @@ export default function Login() {
                       <span className="text-white/30 text-[14px]">→</span>
                     </button>
                   )}
+                </div>
+
+                <div className="field-group">
+                  <label htmlFor="signup-name" className="field-label">Full Name</label>
+                  <input
+                    id="signup-name"
+                    type="text"
+                    required
+                    placeholder="Jane Doe"
+                    className="glass-input"
+                    value={signupFullName}
+                    onChange={e => setSignupFullName(e.target.value)}
+                    onFocus={signupNameAF.onFocus}
+                    readOnly={signupNameAF.readOnly}
+                    autoComplete="name"
+                  />
                 </div>
 
                 <div className="field-group">
