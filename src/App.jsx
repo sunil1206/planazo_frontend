@@ -1,4 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { AuthProvider } from './context/AuthContext'
+import ProtectedRoute   from './components/ProtectedRoute'
 import Landing          from './pages/Landing'
 import RoleSelect       from './pages/RoleSelect'
 import Login            from './pages/Login'
@@ -14,21 +16,26 @@ import BirthdaySite     from './pages/BirthdaySite'
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/"                    element={<Landing />} />
-        <Route path="/select-role"         element={<RoleSelect />} />
-        <Route path="/login"               element={<Login />} />
-        <Route path="/home"                element={<Home />} />
-        <Route path="/create-event"        element={<CreateEvent />} />
-        <Route path="/weddings"            element={<Weddings />} />
-        <Route path="/birthdays"           element={<Birthdays />} />
-        <Route path="/gallery"             element={<Gallery />} />
-        <Route path="/weddings/editor/:id"  element={<InvitationEditor />} />
-        <Route path="/invite/:id"           element={<InvitationSite />} />
-        <Route path="/birthdays/editor/:id" element={<BirthdayEditor />} />
-        <Route path="/birthday/:id"         element={<BirthdaySite />} />
-      </Routes>
+    <BrowserRouter useTransitions={false}>
+      <AuthProvider>
+        <Routes>
+          {/* Public */}
+          <Route path="/"             element={<Landing />} />
+          <Route path="/select-role"  element={<RoleSelect />} />
+          <Route path="/login"        element={<Login />} />
+          <Route path="/invite/:id"   element={<InvitationSite />} />
+          <Route path="/birthday/:id" element={<BirthdaySite />} />
+
+          {/* Protected — dashboard/editor pages require a signed-in user */}
+          <Route path="/home"                 element={<ProtectedRoute><Home /></ProtectedRoute>} />
+          <Route path="/create-event"         element={<ProtectedRoute><CreateEvent /></ProtectedRoute>} />
+          <Route path="/weddings"             element={<ProtectedRoute><Weddings /></ProtectedRoute>} />
+          <Route path="/birthdays"            element={<ProtectedRoute><Birthdays /></ProtectedRoute>} />
+          <Route path="/gallery"              element={<ProtectedRoute><Gallery /></ProtectedRoute>} />
+          <Route path="/weddings/editor/:id"  element={<ProtectedRoute><InvitationEditor /></ProtectedRoute>} />
+          <Route path="/birthdays/editor/:id" element={<ProtectedRoute><BirthdayEditor /></ProtectedRoute>} />
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   )
 }

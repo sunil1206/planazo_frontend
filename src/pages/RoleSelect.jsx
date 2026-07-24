@@ -42,8 +42,11 @@ const ROLES = [
     accent:    '#14b8a6',
     glow:      'rgba(20,184,166,0.32)',
     border:    'rgba(20,184,166,0.3)',
+    hidden:    true, // disabled for now — flip back to false to bring this role back
   },
 ]
+
+const VISIBLE_ROLES = ROLES.filter(r => !r.hidden)
 
 // ── Logo loading overlay ──────────────────────────────────────────────────────
 function LoadingOverlay() {
@@ -178,9 +181,9 @@ export default function RoleSelect() {
       </div>
 
       {/* Role cards */}
-      <div className="relative grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-[860px]"
+      <div className="relative grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-[600px]"
         style={{ perspective: '1200px' }}>
-        {ROLES.map(r => <RoleCard key={r.value} role={r} onSelect={handleSelect} />)}
+        {VISIBLE_ROLES.map(r => <RoleCard key={r.value} role={r} onSelect={handleSelect} />)}
       </div>
 
       {/* Sign in link */}

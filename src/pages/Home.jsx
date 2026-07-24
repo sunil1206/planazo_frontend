@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import logo from '../assets/logo.png'
+import { useAuth } from '../context/useAuth'
 
 // ── Icon helper ───────────────────────────────────────────────────────────────
 function Ico({ children, size = 18 }) {
@@ -315,19 +316,15 @@ function SignOutModal({ onConfirm, onCancel }) {
 // ── Main Component ─────────────────────────────────────────────────────────────
 export default function Home() {
   const navigate = useNavigate()
+  const { user: authUser, logout } = useAuth()
   const [activeNav, setActiveNav]     = useState('MyEvents')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [showSignOut, setShowSignOut] = useState(false)
-  const [user, setUser]               = useState({ name: 'Sunil Ma', email: 'sunilma94@gmail.com' })
-
-  useEffect(() => {
-    const stored = localStorage.getItem('planazo_user')
-    if (stored) setUser(JSON.parse(stored))
-  }, [])
+  const user = authUser ?? { name: 'Sunil Ma', email: 'sunilma94@gmail.com' }
 
   const confirmSignOut = () => {
-    localStorage.removeItem('planazo_user')
-    navigate('/')
+    navigate('/', { replace: true })
+    logout()
   }
 
   const initials = user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
