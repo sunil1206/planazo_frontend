@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef, useCallback } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import logo from '../assets/logo.png'
 import { useAuth } from '../context/useAuth'
@@ -15,8 +15,18 @@ let googleIdInitialized = false
 let currentCredentialHandler = null
 
 // Loads Google's gsi/client script (declared in index.html) before we try to use it.
+//
+// Google's rendered button is a real (same-origin overlay + cross-origin iframe)
+// element whose internal markup is undocumented and can change — searching it
+// for a specific nested selector and firing a synthetic .click() on it (the
+// previous approach here) is exactly that fragile guesswork, and breaks
+// silently whenever Google's DOM shape differs from what the selector expects.
+// Instead this exposes `ready` + `buttonHostRef` so the real button can be laid
+// out as a transparent overlay directly on top of our custom-styled button —
+// the user's actual click lands on Google's real element, no proxying needed.
 function useGoogleIdentityServices(onCredential) {
   const buttonHostRef = useRef(null)
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
     currentCredentialHandler = onCredential
@@ -36,9 +46,8 @@ function useGoogleIdentityServices(onCredential) {
         })
         googleIdInitialized = true
       }
-      // Real Google button rendered off-screen — our own custom-styled button
-      // triggers a click on it, so we never touch its required branding/markup.
-      window.google.accounts.id.renderButton(buttonHostRef.current, { type: 'standard' })
+      window.google.accounts.id.renderButton(buttonHostRef.current, { type: 'standard', width: 360 })
+      setReady(true)
       return true
     }
 
@@ -48,14 +57,7 @@ function useGoogleIdentityServices(onCredential) {
     }
   }, [])
 
-  const trigger = useCallback(() => {
-    const realButton = buttonHostRef.current?.querySelector('div[role="button"]')
-    if (!realButton) return false
-    realButton.click()
-    return true
-  }, [])
-
-  return { buttonHostRef, trigger }
+  return { buttonHostRef, ready }
 }
 
 // ── Prevent browser autofill while keeping click-to-suggest behaviour ────────
@@ -256,14 +258,15 @@ export default function Login() {
     }
   }
 
-  const { buttonHostRef: googleButtonHostRef, trigger: triggerGoogle } = useGoogleIdentityServices(handleGoogleCredential)
+  const { buttonHostRef: googleButtonHostRef, ready: googleReady } = useGoogleIdentityServices(handleGoogleCredential)
+  const googleOverlayActive = !!loginUserType && googleReady
 
+  // Only reachable when the overlay isn't capturing clicks — see googleOverlayActive
+  // below (no account type picked yet, or Google's button hasn't rendered yet).
   const handleGoogle = () => {
     setError('')
     if (!loginUserType) { setError('Please select your account type to continue'); return }
-    if (!GOOGLE_CLIENT_ID || !triggerGoogle()) {
-      setError('Google sign-in is still loading — please try again in a moment.')
-    }
+    setError('Google sign-in is still loading — please try again in a moment.')
   }
 
   return (
@@ -380,13 +383,26 @@ export default function Login() {
                 <div className="flex-1 h-px bg-white/8" />
               </div>
 
-              <button onClick={handleGoogle} className="btn-google">
-                <GoogleIcon />
-                <span>Sign in with Google</span>
-              </button>
-              {/* Real Google-rendered button, kept off-screen — handleGoogle() clicks it programmatically. */}
-              <div ref={googleButtonHostRef} aria-hidden="true"
-                style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', opacity: 0, pointerEvents: 'none' }} />
+              <div className="relative">
+                <button onClick={handleGoogle} className="btn-google">
+                  <GoogleIcon />
+                  <span>Sign in with Google</span>
+                </button>
+                {/*
+                  Google's real button, invisibly overlaid exactly on top of the
+                  custom-styled one above. When active, the user's actual click
+                  lands directly on Google's own element (a genuine gesture —
+                  no synthetic .click(), nothing to guess about its internals).
+                  Until an account type is picked (or the button isn't ready
+                  yet), pointer-events stays off so clicks fall through to the
+                  button underneath and handleGoogle() shows the right message.
+                */}
+                <div ref={googleButtonHostRef} aria-hidden="true"
+                  style={{
+                    position: 'absolute', inset: 0, overflow: 'hidden', opacity: 0,
+                    pointerEvents: googleOverlayActive ? 'auto' : 'none',
+                  }} />
+              </div>
 
               <p className="text-center text-white/35 text-[12px] mt-2.5 sm:mt-4">
                 Don&apos;t have an account?{' '}
